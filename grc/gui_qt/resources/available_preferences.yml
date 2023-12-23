@@ -2,8 +2,8 @@
 # in the Preferences window.
 
 categories:
-  - key: general_
-    name: General
+  - key: grc
+    name: GRC
     items:
       - key: editor
         name: Editor

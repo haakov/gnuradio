@@ -158,6 +158,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         return type(name, bases, namespace)
 
     def create_shapes_and_labels(self):
+        self.force_show_id = self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
         self.prepareGeometryChange()
         font = QtGui.QFont("Helvetica", 10)
         font.setBold(True)
@@ -167,7 +168,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
 
         for key, item in self.params.items():
             value = item.value
-            if value is not None and item.hide == "none":
+            if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
                 i += 20
 
         self.height = i
@@ -384,7 +385,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
             if len(value) > LONG_VALUE:
                 value = value[:LONG_VALUE-3] + '...'
             value_label = item.options[value] if value in item.options else value
-            if value is not None and item.hide == "none":
+            if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
                 if item.is_valid():
                     painter.setPen(QtGui.QPen(1))
                 else:
