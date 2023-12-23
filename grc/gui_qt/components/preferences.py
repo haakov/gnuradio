@@ -51,14 +51,8 @@ class PreferencesDialog(QtWidgets.QDialog):
                     item['_edit'] = QtWidgets.QCheckBox()
 
                     if self.qsettings.contains(full_key):
-                        value = self.qsettings.value(full_key)
-                        if value == 'true':
-                            item['_edit'].setChecked(True)
-                        elif value == 'false':
-                            item['_edit'].setChecked(False)
-                        else:
-                            log.warn(f'Invalid preferences value for {full_key}: {value}. Ignoring')
-                            continue
+                        value = self.qsettings.value(full_key, False, type=bool)
+                        item['_edit'].setChecked(value)
                     else:
                         item['_edit'].setChecked(item['default'])
                         self.qsettings.setValue(full_key, item['default'])
