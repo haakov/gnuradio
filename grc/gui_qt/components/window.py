@@ -1342,6 +1342,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         prefs_dialog = PreferencesDialog(self.app.qsettings)
         if prefs_dialog.exec_():
             prefs_dialog.save_all()
+            self.currentFlowgraph.update()
 
     def example_browser_triggered(self, filter=None):
         log.debug("example-browser")

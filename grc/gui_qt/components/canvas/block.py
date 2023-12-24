@@ -159,6 +159,8 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
 
     def create_shapes_and_labels(self):
         self.force_show_id = self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
+        self.hide_variables = self.parent.app.qsettings.value('grc/hide_variables', type=bool)
+        self.hide_disabled_blocks = self.parent.app.qsettings.value('grc/hide_disabled_blocks', type=bool)
         self.prepareGeometryChange()
         font = QtGui.QFont("Helvetica", 10)
         font.setBold(True)
@@ -340,6 +342,8 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         self._border_color = get_border()
 
     def paint(self, painter, option, widget):
+        if (self.hide_variables and (self.is_variable or self.is_import)) or (self.hide_disabled_blocks and not self.enabled):
+            return
         x, y = (self.x(), self.y())
         self.states["coordinate"] = (self.x(), self.y())
         # Set font
