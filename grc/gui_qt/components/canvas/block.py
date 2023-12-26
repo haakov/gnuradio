@@ -157,10 +157,20 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         namespace = cls.__dict__.copy()
         return type(name, bases, namespace)
 
+    def itemChange(self, change, value):
+        if change == QtWidgets.QGraphicsItem.ItemPositionChange and self.scene() and self.snap_to_grid:
+            grid_size = 10
+            value.setX(round(value.x()/grid_size)*grid_size)
+            value.setY(round(value.y()/grid_size)*grid_size)
+            return value
+        else:
+            return QtWidgets.QGraphicsItem.itemChange(self, change, value)
+
     def create_shapes_and_labels(self):
         self.force_show_id = self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
         self.hide_variables = self.parent.app.qsettings.value('grc/hide_variables', type=bool)
         self.hide_disabled_blocks = self.parent.app.qsettings.value('grc/hide_disabled_blocks', type=bool)
+        self.snap_to_grid = self.parent.app.qsettings.value('grc/snap_to_grid', type=bool)
         self.prepareGeometryChange()
         font = QtGui.QFont("Helvetica", 10)
         font.setBold(True)
@@ -307,6 +317,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
 
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def _update_colors(self):
         def get_bg():
