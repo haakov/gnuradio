@@ -52,6 +52,9 @@ class Port(QtWidgets.QGraphicsItem, CorePort):
         self.parent_flowgraph.addItem(self)
         self.setFlag(QtWidgets.QGraphicsItem.ItemStacksBehindParent)
         self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
+        self.setAcceptHoverEvents(True)
+
+        self._hovering = False
 
     def itemChange(self, change, value):
         if self._dir == "sink":
@@ -81,6 +84,17 @@ class Port(QtWidgets.QGraphicsItem, CorePort):
             self.setParentItem(self.parent_block)
         self.create_shapes()
         self._update_colors()
+        self.auto_hide_port_labels = self.parent.parent.app.qsettings.value('grc/auto_hide_port_labels', type=bool)
+
+    @property
+    def _show_label(self):
+        """
+        Figure out if the label should be hidden
+
+        Returns:
+            true if the label should not be shown
+        """
+        return self._hovering or not self.auto_hide_port_labels
 
     def _update_colors(self):
         """
@@ -110,6 +124,14 @@ class Port(QtWidgets.QGraphicsItem, CorePort):
         else:
             return QtCore.QRectF(0, 0, self.width, self.height) # same as the rectangle we draw, but with a 0.5*pen width margin
 
+    def hoverEnterEvent(self, event):
+        self._hovering = True
+        return QtWidgets.QGraphicsItem.hoverEnterEvent(self, event)
+
+    def hoverLeaveEvent(self, event):
+        self._hovering = False
+        return QtWidgets.QGraphicsItem.hoverLeaveEvent(self, event)
+
     def paint(self, painter, option, widget):
         """
         Draw the socket with a label.
@@ -128,13 +150,14 @@ class Port(QtWidgets.QGraphicsItem, CorePort):
             rect = QtCore.QRectF(0, 0, self.width, self.height) # same as the rectangle we draw, but with a 0.5*pen width margin
         painter.drawRect(rect)
 
-        painter.setPen(QtGui.QPen(1))
-        font = QtGui.QFont('Helvetica', 8)
-        painter.setFont(font)
-        if self._dir == "sink":
-            painter.drawText(QtCore.QRectF(-max(0, self.width - 15), 0, self.width, self.height), Qt.AlignCenter, self.name)
-        else:
-            painter.drawText(QtCore.QRectF(0, 0, self.width, self.height), Qt.AlignCenter, self.name)
+        if self._show_label:
+            painter.setPen(QtGui.QPen(1))
+            font = QtGui.QFont('Helvetica', 8)
+            painter.setFont(font)
+            if self._dir == "sink":
+                painter.drawText(QtCore.QRectF(-max(0, self.width - 15), 0, self.width, self.height), Qt.AlignCenter, self.name)
+            else:
+                painter.drawText(QtCore.QRectF(0, 0, self.width, self.height), Qt.AlignCenter, self.name)
 
     def center(self):
         return QtCore.QPointF(self.x() + self.width/2, self.y() + self.height/2)
