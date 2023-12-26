@@ -208,7 +208,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         for key, item in self.params.items():
             name = item.name
             value = item.value
-            if value is not None and item.hide == "none":
+            if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
                 if len(value) > LONG_VALUE:
                     value = value[:LONG_VALUE-3] + '...'
 
