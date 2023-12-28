@@ -46,7 +46,6 @@ from .undoable_actions import (
     DeleteElementAction,
     BlockPropsChangeAction,
 )
-from . import DocumentationTab
 from .preferences import PreferencesDialog
 from .example_browser import ExampleBrowser
 from .oot_browser import OOTBrowser
