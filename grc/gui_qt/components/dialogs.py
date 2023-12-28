@@ -52,11 +52,12 @@ class ErrorsDialog(QtWidgets.QDialog):
         self.treeview.setModel(self.model)
 
 class PropsDialog(QtWidgets.QDialog):
-    def __init__(self, parent_block):
+    def __init__(self, parent_block, force_show_id):
         super().__init__()
         self.setMinimumSize(600, 400)
         self._block = parent_block
         self.setModal(True)
+        self.force_show_id = force_show_id
 
         self.setWindowTitle(f"Properties: {self._block.label}")
 
@@ -81,6 +82,8 @@ class PropsDialog(QtWidgets.QDialog):
             qvb.setHorizontalSpacing(20)
             i = 0
             for param in self._block.params.values():
+                if force_show_id and param.dtype == 'id':
+                        param.hide = 'none'
                 if param.category == cat and param.hide != "all":
                     qvb.addWidget(QtWidgets.QLabel(param.name), i, 0)
                     if param.dtype == "enum" or param.options:

@@ -368,7 +368,12 @@ def test_num_inputs(qtbot, qapp_cls_):
     click_pos = scaling * global_pos(n_sink, view)
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
     qtbot.wait(100)
-    qtbot.mouseDClick(n_sink.props_dialog.edit_params[2], QtCore.Qt.LeftButton)
+    param_index = 0
+    for i in range(len(n_sink.props_dialog.edit_params)):
+        if n_sink.props_dialog.edit_params[i].param.key == 'num_inputs':
+            param_index = i
+
+    qtbot.mouseDClick(n_sink.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
     type_text(qtbot, qapp_cls_, "2")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
@@ -378,7 +383,7 @@ def test_num_inputs(qtbot, qapp_cls_):
     click_pos = scaling * global_pos(n_sink, view)
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
     qtbot.wait(100)
-    qtbot.mouseDClick(n_sink.props_dialog.edit_params[2], QtCore.Qt.LeftButton)
+    qtbot.mouseDClick(n_sink.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
     type_text(qtbot, qapp_cls_, "1")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)

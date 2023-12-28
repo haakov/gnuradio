@@ -9,7 +9,7 @@ categories:
         name: Editor
         tooltip: Choose the editor
         dtype: str
-        default: gedit
+        default: /usr/bin/gedit
       - key: hide_variables
         name: Hide variables
         dtype: bool

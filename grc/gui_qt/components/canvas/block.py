@@ -35,14 +35,43 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         namespace = cls.__dict__.copy()
         return type(name, bases, namespace)
 
-    def itemChange(self, change, value):
-        if change == QtWidgets.QGraphicsItem.ItemPositionChange and self.scene() and self.snap_to_grid:
-            grid_size = 10
-            value.setX(round(value.x()/grid_size)*grid_size)
-            value.setY(round(value.y()/grid_size)*grid_size)
-            return value
-        else:
-            return QtWidgets.QGraphicsItem.itemChange(self, change, value)
+    def __init__(self, parent, **n):
+        # super(self.__class__, self).__init__(parent, **n)
+        CoreBlock.__init__(self, parent)
+        QtWidgets.QGraphicsItem.__init__(self)
+
+        for sink in self.sinks:
+            sink.setParentItem(self)
+        for source in self.sources:
+            source.setParentItem(self)
+
+        self.width = 300  # default shouldnt matter, it will change immedaitely after the first paint
+        # self.block_key = block_key
+        # self.block_label = block_label
+        self.block_label = self.key
+
+        if "coordinate" not in self.states.keys():
+            self.states["coordinate"] = (500, 300)
+            self.setPos(
+                QtCore.QPointF(
+                    self.states["coordinate"][0], self.states["coordinate"][1]
+                )
+            )
+        if "rotation" not in self.states.keys():
+            self.states["rotation"] = 0.0
+
+        self.create_shapes_and_labels()
+
+        self.moving = False
+        self.oldPos = (self.x(), self.y())
+        self.newPos = (self.x(), self.y())
+        self.states["coordinate"] = (self.x(), self.y())
+        self.oldData = None
+        self.props_dialog = None
+
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def create_shapes_and_labels(self):
         self.force_show_id = self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
@@ -50,6 +79,9 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         self.hide_disabled_blocks = self.parent.app.qsettings.value('grc/hide_disabled_blocks', type=bool)
         self.snap_to_grid = self.parent.app.qsettings.value('grc/snap_to_grid', type=bool)
         self.show_complexity = self.parent.app.qsettings.value('grc/show_complexity', type=bool)
+        self.show_block_comments = self.parent.app.qsettings.value('grc/show_block_comments', type=bool)
+        self.show_param_expr = self.parent.app.qsettings.value('grc/show_param_expr', type=bool)
+        self.show_param_val = self.parent.app.qsettings.value('grc/show_param_val', type=bool)
         self.prepareGeometryChange()
         font = QtGui.QFont("Helvetica", 10)
         font.setBold(True)
@@ -159,44 +191,6 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
             # for port in ports:
             #    port.width = max_width
 
-    # def __init__(self, block_key, block_label, attrib, params, parent):
-    def __init__(self, parent, **n):
-        # super(self.__class__, self).__init__(parent, **n)
-        CoreBlock.__init__(self, parent)
-        QtWidgets.QGraphicsItem.__init__(self)
-
-        for sink in self.sinks:
-            sink.setParentItem(self)
-        for source in self.sources:
-            source.setParentItem(self)
-
-        self.width = 300  # default shouldnt matter, it will change immedaitely after the first paint
-        # self.block_key = block_key
-        # self.block_label = block_label
-        self.block_label = self.key
-
-        if "coordinate" not in self.states.keys():
-            self.states["coordinate"] = (500, 300)
-            self.setPos(
-                QtCore.QPointF(
-                    self.states["coordinate"][0], self.states["coordinate"][1]
-                )
-            )
-        if "rotation" not in self.states.keys():
-            self.states["rotation"] = 0.0
-
-        self.create_shapes_and_labels()
-
-        self.moving = False
-        self.oldPos = (self.x(), self.y())
-        self.newPos = (self.x(), self.y())
-        self.states["coordinate"] = (self.x(), self.y())
-        self.oldData = None
-        self.props_dialog = None
-
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def _update_colors(self):
         def get_bg():
@@ -276,9 +270,27 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         for key, item in self.params.items():
             name = item.name
             value = item.value
-            if len(value) > LONG_VALUE:
-                value = value[:LONG_VALUE-3] + '...'
-            value_label = item.options[value] if value in item.options else value
+            is_evaluated = item.value != str(item.get_evaluated())
+
+            display_value = ""
+
+            # Include the value defined by the user (after evaluation)
+            if not is_evaluated or self.show_param_val or not self.show_param_expr:
+                display_value += item.options[value] if value in item.options else value # TODO: pretty_print
+
+            # Include the expression that was evaluated to get the value
+            if is_evaluated and self.show_param_expr:
+                expr_string = value # TODO: Truncate
+
+                if display_value:  # We are already displaying the value
+                    display_value = expr_string + "=" + display_value
+                else:
+                    display_value = expr_string
+
+            if len(display_value) > LONG_VALUE:
+                display_value = display_value[:LONG_VALUE-3] + '...'
+
+            value_label = display_value
             if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
                 if item.is_valid():
                     painter.setPen(QtGui.QPen(1))
@@ -313,7 +325,9 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
             markups.append('Complexity: {num} bal'.format(
                     num=Utils.num_to_str(complexity)))
 
-        markups.append(self.comment)
+        if self.show_block_comments and self.comment:
+            markups.append(self.comment)
+
         if markups: # TODO: Calculate comment box size
             painter.setPen(Qt.gray)
             painter.drawText(
@@ -367,6 +381,14 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         self.open_properties()
         super(self.__class__, self).mouseDoubleClickEvent(e)
 
+    def itemChange(self, change, value):
+        if change == QtWidgets.QGraphicsItem.ItemPositionChange and self.scene() and self.snap_to_grid:
+            grid_size = 10
+            value.setX(round(value.x()/grid_size)*grid_size)
+            value.setY(round(value.y()/grid_size)*grid_size)
+            return value
+        else:
+            return QtWidgets.QGraphicsItem.itemChange(self, change, value)
     def import_data(self, name, states, parameters, **_):
         CoreBlock.import_data(self, name, states, parameters, **_)
         self.states["coordinate"] = QtCore.QPointF(
@@ -388,6 +410,6 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         return QtCore.QPointF(self.x() + self.width / 2, self.y() + self.height / 2)
 
     def open_properties(self):
-        self.props_dialog = PropsDialog(self)
+        self.props_dialog = PropsDialog(self, self.force_show_id)
         self.props_dialog.show()
 
