@@ -6,7 +6,9 @@ from qtpy.QtCore import Qt, QUrl
 
 from . import colors
 from ... import Constants
+from ... import Utils
 from ....core.blocks.block import Block as CoreBlock
+from ....core.utils import flow_graph_complexity
 
 from ..dialogs import PropsDialog
 
@@ -47,6 +49,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         self.hide_variables = self.parent.app.qsettings.value('grc/hide_variables', type=bool)
         self.hide_disabled_blocks = self.parent.app.qsettings.value('grc/hide_disabled_blocks', type=bool)
         self.snap_to_grid = self.parent.app.qsettings.value('grc/snap_to_grid', type=bool)
+        self.show_complexity = self.parent.app.qsettings.value('grc/show_complexity', type=bool)
         self.prepareGeometryChange()
         font = QtGui.QFont("Helvetica", 10)
         font.setBold(True)
@@ -304,17 +307,24 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
                 )
                 y_offset += 20
 
-        # Draw comment
-        painter.setPen(Qt.gray)
-        painter.drawText(
-                    QtCore.QRectF(0, self.height + 5, self.width, self.height),
-                    Qt.AlignLeft,
-                    self.comment,
-                )
+        markups = []
+        if self.show_complexity and self.key == "options":
+            complexity = flow_graph_complexity.calculate(self.parent)
+            markups.append('Complexity: {num} bal'.format(
+                    num=Utils.num_to_str(complexity)))
+
+        markups.append(self.comment)
+        if markups: # TODO: Calculate comment box size
+            painter.setPen(Qt.gray)
+            painter.drawText(
+                        QtCore.QRectF(0, self.height + 5, self.width, self.height),
+                        Qt.AlignLeft,
+                        "\n".join(markups),
+                    )
 
 
     def boundingRect(self):  # required to have
-        return QtCore.QRectF(
+        return QtCore.QRectF( # TODO: Calculate comment box size
             -2.5, -2.5, self.width + 5, self.height + (5 if not self.comment else 50)
         )  # margin to avoid artifacts
 
