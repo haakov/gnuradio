@@ -304,9 +304,18 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
                 )
                 y_offset += 20
 
+        # Draw comment
+        painter.setPen(Qt.gray)
+        painter.drawText(
+                    QtCore.QRectF(0, self.height + 5, self.width, self.height),
+                    Qt.AlignLeft,
+                    self.comment,
+                )
+
+
     def boundingRect(self):  # required to have
         return QtCore.QRectF(
-            -2.5, -2.5, self.width + 5, self.height + 5
+            -2.5, -2.5, self.width + 5, self.height + (5 if not self.comment else 50)
         )  # margin to avoid artifacts
 
     def registerMoveStarting(self):
