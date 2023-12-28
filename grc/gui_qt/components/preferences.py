@@ -61,7 +61,7 @@ class PreferencesDialog(QtWidgets.QDialog):
                     item['_edit'] = QtWidgets.QComboBox()
                     for opt in item['option_labels']:
                         item['_edit'].addItem(opt)
-                    index = item['options'].index(self.qsettings.value(full_key, type=str))
+                    index = item['options'].index(self.qsettings.value(full_key, item['default'], type=str))
                     item['_edit'].setCurrentIndex(index)
                 else:
                     if self.qsettings.contains(full_key):
