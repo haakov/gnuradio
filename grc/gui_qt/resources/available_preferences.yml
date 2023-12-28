@@ -37,7 +37,7 @@ categories:
       - key: show_block_comments
         name: Show block comments
         dtype: bool
-        default: False
+        default: True
       - key: show_block_ids
         name: Show all block IDs
         dtype: bool
