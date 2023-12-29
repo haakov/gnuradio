@@ -46,9 +46,12 @@ class Application(QtWidgets.QApplication):
     def __init__(self, settings, platform):
         # Note. Logger must have the correct naming convention to share handlers
         log.debug("__init__")
+        self.settings = settings
+        self.platform = platform
+        config = platform.config
 
-        self.qsettings = QtCore.QSettings('GNU Radio', 'GRC')
-        log.debug(f"Using QSettings from {self.qsettings.fileName()}")
+        self.qsettings = QtCore.QSettings(config.gui_prefs_file, QtCore.QSettings.IniFormat)
+        log.debug(f"Using QSettings from {config.gui_prefs_file}")
         os.environ["QT_SCALE_FACTOR"] = self.qsettings.value('appearance/qt_scale_factor', "1.0", type=str)
 
         log.debug("Creating QApplication instance")
@@ -66,9 +69,6 @@ class Application(QtWidgets.QApplication):
             except ImportError:
                 log.warning("Did not find QDarkstyle. Dark mode disabled")
 
-        # Save references to the global settings and gnuradio platform
-        self.settings = settings
-        self.platform = platform
 
         # Load the main view class and initialize QMainWindow
         log.debug("ARGV - {0}".format(settings.argv))
@@ -111,25 +111,10 @@ class Application(QtWidgets.QApplication):
         # log.debug("Loaded DocumentationTab component - {:.4}s".format(stopwatch.elapsed("documentationtab")))
 
         # Print Startup information once everything has loaded
-        log.critical("TODO: Change welcome message.")
-
-        welcome = """
-        linux; GNU C++ version 4.8.2; Boost_105400; UHD_003.007.002-94-ge56809a0
-
-        <<< Welcome to GNU Radio Companion 3.7.6git-1-g01deede >>>
-
-        Preferences file: /home/seth/.grc
-        Block paths:
-          /home/seth/Dev/gnuradio/target/share/gnuradio/grc/blocks
-          /home/seth/.grc_gnuradio
-        Loading: \"/home/seth/Dev/persistent-ew/gnuradio/target/flex_rx.grc\"
-        """
-
-        config = platform.config
-        paths = "\n\t".join(platform.config.block_paths)
+        paths = "\n\t".join(config.block_paths)
         welcome = (
             f"<<< Welcome to {config.name} {config.version} >>>\n\n"
-            f"Preferences file: {config.gui_prefs_file}\n"
+            f"GUI preferences file: {self.qsettings.fileName()}\n"
             f"Block paths:\n\t{paths}\n"
         )
         log.info(textwrap.dedent(welcome))
