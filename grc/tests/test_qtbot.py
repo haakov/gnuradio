@@ -364,6 +364,7 @@ def test_num_inputs(qtbot, qapp_cls_):
 
     click_on(qtbot, qapp_cls_, n_src.sources[0])
     click_on(qtbot, qapp_cls_, n_sink.sinks[0])
+    qtbot.wait(100)
 
     click_pos = scaling * global_pos(n_sink, view)
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
@@ -387,15 +388,60 @@ def test_num_inputs(qtbot, qapp_cls_):
     type_text(qtbot, qapp_cls_, "1")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
+    qtbot.wait(100)
     assert len(n_sink.sinks) == 1
     assert len(fg.connections) == 1
 
     # I think loses focus makes delete_fail the first time. This makes it work, but is a hack
-    click_on(qtbot, qapp_cls_, n_src)
+    #click_on(qtbot, qapp_cls_, n_src)
+    pag.click(click_pos.x()+50, click_pos.y()+50, button="left")
 
     for block in [n_src, n_sink]:
         delete_block(qtbot, qapp_cls_, block)
+    qtbot.wait(100)
+    assert len(fg.blocks) == 2
 
+def test_bus(qtbot, qapp_cls_):
+    fg = qapp_cls_.MainWindow.currentFlowgraph
+    view = qapp_cls_.MainWindow.currentView
+    scaling = qapp_cls_.desktop().devicePixelRatio()
+
+    qtbot.wait(100)
+    add_block_from_query(qtbot, qapp_cls_, "null sin")
+
+    n_sink = find_blocks(fg, "blocks_null_sink")
+
+    assert len(n_sink.sinks) == 1
+
+    click_pos = scaling * global_pos(n_sink, view)
+    pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
+    qtbot.wait(100)
+    param_index = 0
+    for i in range(len(n_sink.props_dialog.edit_params)):
+        if n_sink.props_dialog.edit_params[i].param.key == 'num_inputs':
+            param_index = i
+
+    qtbot.mouseDClick(n_sink.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
+    type_text(qtbot, qapp_cls_, "2")
+    qtbot.wait(100)
+    keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
+    qtbot.wait(100)
+    assert len(n_sink.sinks) == 2
+
+    qtbot.wait(100)
+    more_menu = qapp_cls_.MainWindow.menus["more"]
+    menu_shortcut(qtbot, qapp_cls_, "edit", QtCore.Qt.Key_E, QtCore.Qt.Key_M)
+    qtbot.wait(100)
+    qtbot.keyClick(more_menu, QtCore.Qt.Key_Up)
+    qtbot.wait(100)
+    qtbot.keyClick(more_menu, QtCore.Qt.Key_Enter)
+    qtbot.wait(100)
+    assert len(n_sink.sinks) == 3
+    assert n_sink.sinks[2].dtype == 'bus'
+    # TODO: Test undo
+
+    delete_block(qtbot, qapp_cls_, n_sink)
+    qtbot.wait(100)
 
 def test_bypass(qtbot, qapp_cls_):
     scaling = qapp_cls_.desktop().devicePixelRatio()
@@ -660,25 +706,6 @@ def test_file_new_close(qtbot, qapp_cls_, monkeypatch):
         ctrl_keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_W)
         assert win.tabWidget.count() == 4 - i, "File/Close"
 
-
-def test_file_close_all(qtbot, qapp_cls_, monkeypatch):
-    win = qapp_cls_.MainWindow
-    monkeypatch.setattr(
-        QtWidgets.QMessageBox,
-        "question",
-        lambda *args: QtWidgets.QMessageBox.Discard,
-    )
-
-    qtbot.wait(100)
-
-    for i in range(1, 4):
-        ctrl_keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_N)
-
-    assert win.tabWidget.count() == 4, "File/Close All"
-    menu_shortcut(qtbot, qapp_cls_, "file", QtCore.Qt.Key_F, QtCore.Qt.Key_L)
-    assert win.tabWidget.count() == 1, "File/Close All"
-
-
 def test_generate(qtbot, qapp_cls_, monkeypatch, tmp_path):
     fg = qapp_cls_.MainWindow.currentFlowgraph
     view = qapp_cls_.MainWindow.currentView
@@ -720,6 +747,23 @@ def test_generate(qtbot, qapp_cls_, monkeypatch, tmp_path):
     qtbot.wait(500)
     assert fg_path.exists(), "File/Save: Could not save .grc file"
     assert py_path.exists(), "File/Save: Could not save Python file"
+
+def test_file_close_all(qtbot, qapp_cls_, monkeypatch):
+    win = qapp_cls_.MainWindow
+    monkeypatch.setattr(
+        QtWidgets.QMessageBox,
+        "question",
+        lambda *args: QtWidgets.QMessageBox.Discard,
+    )
+
+    qtbot.wait(100)
+
+    for i in range(1, 4):
+        ctrl_keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_N)
+
+    assert win.tabWidget.count() == 4, "File/Close All"
+    menu_shortcut(qtbot, qapp_cls_, "file", QtCore.Qt.Key_F, QtCore.Qt.Key_L)
+    assert win.tabWidget.count() == 1, "File/Close All"
 
 def test_quit(qtbot, qapp_cls_):
     qapp_cls_.MainWindow.actions["exit"].trigger()
