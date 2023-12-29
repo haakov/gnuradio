@@ -47,15 +47,16 @@ class Application(QtWidgets.QApplication):
         # Note. Logger must have the correct naming convention to share handlers
         log.debug("__init__")
 
+        self.qsettings = QtCore.QSettings('GNU Radio', 'GRC')
+        log.debug(f"Using QSettings from {self.qsettings.fileName()}")
+        os.environ["QT_SCALE_FACTOR"] = self.qsettings.value('appearance/qt_scale_factor', "1.0", type=str)
+
         log.debug("Creating QApplication instance")
-        os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+        #os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
         QtWidgets.QApplication.__init__(self, settings.argv)
-
-        self.qsettings = QtCore.QSettings('GNU Radio', 'GRC')
-        log.debug(f"Using QSettings from {self.qsettings.fileName()}")
 
         if self.qsettings.value("appearance/theme") == "dark":
             try:
