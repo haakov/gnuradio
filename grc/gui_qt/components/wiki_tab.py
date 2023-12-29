@@ -60,7 +60,7 @@ class WikiTab(QtWidgets.QDockWidget, base.Component):
         self._container = container
 
         layout = QtWidgets.QVBoxLayout(container)
-        layout.setObjectName('block_library::layout')
+        layout.setObjectName('wiki_tab::layout')
         layout.setSpacing(0)
         layout.setContentsMargins(5, 0, 5, 5)
         self._text = QWebEngineView()

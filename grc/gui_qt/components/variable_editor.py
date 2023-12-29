@@ -26,6 +26,7 @@ class VariableEditor(QtWidgets.QDockWidget, base.Component):
 
         ### GUI Widgets
         self._tree = QtWidgets.QTreeWidget()
+        self._tree.setObjectName('variable_editor::tree_widget')
         self._tree.setHeaderLabels(["ID", "Value", ""])
         self.setWidget(self._tree)
 

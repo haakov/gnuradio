@@ -50,6 +50,10 @@ categories:
         name: Show flowgraph complexity
         dtype: bool
         default: False
+      - key: custom_block_paths
+        name: Custom block paths
+        dtype: str
+        default: ""
 
   - key: appearance
     name: Appearance
@@ -70,8 +74,18 @@ categories:
         tooltip: Scaling factor of Qt GUI elements. Note that the effective device pixel ratio will be a product of this value and the native device pixel ratio.
         dtype: str
         default: 1.0
-      - key: show_units
-        name: Show units (not implemented)
-        tooltip: Show units in block parameters window
-        dtype: bool
-        default: False
+#      - key: show_units
+#        name: Show units (not implemented)
+#        tooltip: Show units in block parameters window
+#        dtype: bool
+#        default: False
+
+# Window settings, these are not meant to be changed by the user.
+# TODO: Is it necessary to have these in here?
+window:
+  - key: current_file
+    dtype: str
+    default: ""
+  - key: recent_files
+    dtype: list
+    default: []

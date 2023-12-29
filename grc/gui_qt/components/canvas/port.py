@@ -55,6 +55,7 @@ class Port(QtWidgets.QGraphicsItem, CorePort):
         self.setAcceptHoverEvents(True)
 
         self._hovering = False
+        self.auto_hide_port_labels = False
 
     def itemChange(self, change, value):
         if self._dir == "sink":

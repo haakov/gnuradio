@@ -155,7 +155,8 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         log.debug("Loading flowgraph model")
         fg_view = FlowgraphView(self)
         fg_view.centerOn(0, 0)
-        initial_state = self.platform.parse_flow_graph("")
+        initial_state = self.platform.parse_flow_graph(
+            self.app.qsettings.value('window/current_file',""))
         fg_view.flowgraph.import_data(initial_state)
         log.debug("Adding flowgraph view")
 
@@ -172,6 +173,12 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
         self.clipboard = None
         self.undoView = None
+
+        try:
+            self.restoreGeometry(self.app.qsettings.value("window/geometry"))
+            self.restoreState(self.app.qsettings.value("window/windowState"))
+        except TypeError:
+            log.warning("Could not restore window geometry and state.")
 
         self.examples_found = False
         self.ExampleBrowser = ExampleBrowser()
@@ -664,10 +671,21 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         # Global menu options
         self.menuBar().setNativeMenuBar(True)
 
+        open_recent = Menu("Open recent")
+        menus["open_recent"] = open_recent
+        recent_files = None
+        if recent_files:
+            pass
+        else:
+            open_recent.setEnabled(False)
+        #open_recent.addAction(actions["open"])
+        # TODO: populate recent files
+
         # Setup the file menu
         file = Menu("&File")
         file.addAction(actions["new"])
         file.addAction(actions["open"])
+        file.addMenu(open_recent)
         file.addAction(actions["example_browser"])
         file.addAction(actions["close"])
         file.addAction(actions["close_all"])
@@ -1368,6 +1386,16 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
     def exit_triggered(self):
         log.debug("exit")
+
+        self.app.qsettings.setValue('window/windowState', self.saveState())
+        self.app.qsettings.setValue('window/geometry', self.saveGeometry())
+        file_path = self.currentFlowgraph.filename
+        if file_path:
+            self.app.qsettings.setValue('window/current_file', file_path)
+        else:
+            self.app.qsettings.setValue('window/current_file', "")
+        self.app.qsettings.sync()
+
         # TODO: Make sure all flowgraphs have been saved
         self.app.exit()
 
