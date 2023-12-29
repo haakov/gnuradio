@@ -72,6 +72,10 @@ class PreferencesDialog(QtWidgets.QDialog):
 
                 item['_line'] = QtWidgets.QHBoxLayout()
 
+                if 'tooltip' in item.keys():
+                    item['_label'].setToolTip(item['tooltip'])
+                    item['_edit'].setToolTip(item['tooltip'])
+
                 item['_line'].addWidget(item['_label'])
                 item['_line'].addWidget(item['_edit'])
                 # This needs some work
