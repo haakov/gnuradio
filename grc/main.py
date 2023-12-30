@@ -215,21 +215,6 @@ def main():
     parser.set_defaults(framework='gtk')
     args = parser.parse_args()
 
-    ### Console output
-    # Add a console log handler that filters output based on the input arguments
-    console = logging.StreamHandler()
-    console.setLevel(LOG_LEVELS[args.log])
-
-    # Output format
-    console_msg_format = '[%(levelname)s] %(message)s'
-    # If debug output is enabled for the console, then add the file and line numbers. (MAYBE: Module too?)
-    if args.log == 'debug':
-        console_msg_format += ' (%(name)s:%(lineno)s)'
-    console_formatter = logging.Formatter(console_msg_format)
-    #formatter = utils.log.ConsoleFormatter()
-    console.setFormatter(console_formatter)
-    log.addHandler(console)
-
     # Print the startup message
     py_version = sys.version.split()[0]
     log.info("Starting GNU Radio Companion {} (Python {})".format(gr.version(), py_version))
