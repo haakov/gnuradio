@@ -179,6 +179,27 @@ def test_add_throttle(qtbot, qapp_cls_):
 
     delete_block(qtbot, qapp_cls_, throttle)
 
+def test_errors(qtbot, qapp_cls_):
+    menu = qapp_cls_.MainWindow.menus["build"]
+
+    def assert_and_close():
+        assert qapp_cls_.activeWindow() != qapp_cls_.MainWindow
+        qtbot.keyClick(qapp_cls_.activeWindow(), QtCore.Qt.Key_Escape)
+
+    qtbot.wait(100)
+    add_block_from_query(qtbot, qapp_cls_, "throttle")
+    qtbot.wait(100)
+    qtbot.keyClick(qapp_cls_.focusWidget(), QtCore.Qt.Key_B, QtCore.Qt.AltModifier)
+    qtbot.wait(100)
+    QtCore.QTimer.singleShot(200, assert_and_close)
+    #qtbot.keyClick(menu, QtCore.Qt.Key_E) # Not necessary since it's already selected (it's the first item)
+    qtbot.keyClick(menu, QtCore.Qt.Key_Enter)
+    qtbot.wait(300)
+
+    throttle = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "blocks_throttle")
+    assert throttle is not None
+
+    delete_block(qtbot, qapp_cls_, throttle)
 
 def test_open_properties(qtbot, qapp_cls_):
     qtbot.wait(100)
