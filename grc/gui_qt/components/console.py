@@ -151,6 +151,10 @@ class Console(QtWidgets.QDockWidget, base.Component):
 
         self.actions['show_level'].setChecked = True
         self.handler.show_level = True
+        self.enabled = False
+
+    def enable(self):
+        self.enabled = True
 
     ### Actions
 
@@ -191,11 +195,11 @@ class Console(QtWidgets.QDockWidget, base.Component):
     def add_line(self, line):
         # TODO: Support multiple columns for the HTML. DO better with the spacing
         #  and margins in the output
-
-        self._text.append(line)
-        if self.actions["auto_scroll"].isChecked():
-            self._text.verticalScrollBar().setValue(
-                self._text.verticalScrollBar().maximum())
+        if self.enabled:
+            self._text.append(line)
+            if self.actions["auto_scroll"].isChecked():
+                self._text.verticalScrollBar().setValue(
+                    self._text.verticalScrollBar().maximum())
 
     # Handlers for the view actions
     def clear_triggered(self):

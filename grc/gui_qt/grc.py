@@ -113,6 +113,8 @@ class Application(QtWidgets.QApplication):
         # log.debug("Loaded DocumentationTab component - {:.4}s".format(stopwatch.elapsed("documentationtab")))
 
         # Print Startup information once everything has loaded
+        self.Console.enable()
+
         paths = "\n\t".join(config.block_paths)
         welcome = (
             f"<<< Welcome to {config.name} {config.version} >>>\n\n"
