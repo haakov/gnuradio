@@ -540,8 +540,6 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
         actions["keys"] = Action(_("&Keys"), self)
 
-        actions["parser_errors"] = Action("Parser Errors", self)
-
         actions["get_involved"] = Action(_("&Get Involved"), self)
 
         actions["preferences"] = Action(
@@ -773,7 +771,6 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         help.addAction(actions["help"])
         help.addAction(actions["types"])
         help.addAction(actions["keys"])
-        help.addAction(actions["parser_errors"])
         help.addSeparator()
         help.addAction(actions["get_involved"])
         help.addAction(actions["about"])
