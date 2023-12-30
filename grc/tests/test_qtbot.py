@@ -449,6 +449,7 @@ def test_bus(qtbot, qapp_cls_):
     qtbot.wait(100)
     assert len(n_sink.sinks) == 2
 
+    # Enable bus port
     qtbot.wait(100)
     more_menu = qapp_cls_.MainWindow.menus["more"]
     menu_shortcut(qtbot, qapp_cls_, "edit", QtCore.Qt.Key_E, QtCore.Qt.Key_M)
@@ -459,7 +460,26 @@ def test_bus(qtbot, qapp_cls_):
     qtbot.wait(100)
     assert len(n_sink.sinks) == 3
     assert n_sink.sinks[2].dtype == 'bus'
-    # TODO: Test undo
+
+    # Disable bus port
+    qtbot.wait(100)
+    more_menu = qapp_cls_.MainWindow.menus["more"]
+    menu_shortcut(qtbot, qapp_cls_, "edit", QtCore.Qt.Key_E, QtCore.Qt.Key_M)
+    qtbot.wait(100)
+    qtbot.keyClick(more_menu, QtCore.Qt.Key_Up)
+    qtbot.wait(100)
+    qtbot.keyClick(more_menu, QtCore.Qt.Key_Enter)
+    qtbot.wait(100)
+    assert len(n_sink.sinks) == 2
+
+    # Test undo
+    undo(qtbot, qapp_cls_)
+    qtbot.wait(100)
+    assert len(n_sink.sinks) == 3
+    qtbot.wait(100)
+    undo(qtbot, qapp_cls_)
+    qtbot.wait(100)
+    assert len(n_sink.sinks) == 2
 
     delete_block(qtbot, qapp_cls_, n_sink)
     qtbot.wait(100)
