@@ -68,7 +68,7 @@ QStyle = QtWidgets.QStyle
 class MainWindow(QtWidgets.QMainWindow, base.Component):
     def __init__(self):
         QtWidgets.QMainWindow.__init__(self)
-        base.Component.__init__(self)
+        #base.Component.__init__(self)
 
         log.debug("Setting the main window")
         self.setObjectName("main")
@@ -442,12 +442,6 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
             statusTip=_("flowgraph-properties-tooltip"),
         )
 
-        actions["search-in-examples"] = Action(
-            _("search-in-examples"),
-            self,
-            statusTip=_("search-in-examples-tooltip"),
-        )
-
         actions["properties"].setEnabled(False)
 
         # View Actions
@@ -469,9 +463,6 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
             self,
             shortcut="Ctrl+0",
         )
-
-        actions["snap_to_grid"] = Action(_("snap_to_grid"), self)
-        actions["snap_to_grid"].setCheckable(True)
 
         actions["toggle_grid"] = Action(
             _("toggle_grid"), self, shortcut="G", statusTip=_("toggle_grid-tooltip")
@@ -542,11 +533,6 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         )
 
         actions["module_browser"] = Action(_("&OOT Module Browser"), self)
-
-        actions["show_flowgraph_complexity"] = Action(
-            _("show_flowgraph_complexity"), self
-        )
-        actions["show_flowgraph_complexity"].setCheckable(True)
 
         # Help Actions
 
@@ -780,8 +766,6 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         tools.addAction(actions["filter_design_tool"])
         tools.addAction(actions["set_default_qt_gui_theme"])
         tools.addAction(actions["module_browser"])
-        tools.addSeparator()
-        tools.addAction(actions["show_flowgraph_complexity"])
         menus["tools"] = tools
 
         # Setup the help menu

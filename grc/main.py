@@ -215,7 +215,6 @@ def main():
     parser.set_defaults(framework='gtk')
     args = parser.parse_args()
 
-
     ### Console output
     # Add a console log handler that filters output based on the input arguments
     console = logging.StreamHandler()
@@ -234,6 +233,17 @@ def main():
     # Print the startup message
     py_version = sys.version.split()[0]
     log.info("Starting GNU Radio Companion {} (Python {})".format(gr.version(), py_version))
+
+    # File logging
+    log_file = os.path.expanduser('~') + "/.gnuradio/grc.log"
+    try:
+        fileHandler = logging.FileHandler(log_file)
+        fileHandler.setLevel(logging.DEBUG)
+        fileHandler.setFormatter(formatter)
+        log.addHandler(fileHandler)
+        log.info(f'Logging to {log_file}')
+    except PermissionError:
+        log.error(f'Cannot write to {log_file} (Permission denied)')
 
 
     ### GUI Framework

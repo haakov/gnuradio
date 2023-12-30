@@ -99,8 +99,7 @@ class LibraryView(QtWidgets.QTreeView):
 
 class BlockLibrary(QtWidgets.QDockWidget, base.Component):
     def __init__(self):
-        QtWidgets.QDockWidget.__init__(self)
-        base.Component.__init__(self)
+        super(BlockLibrary, self).__init__()
 
         self.setObjectName("block_library")
         self.setWindowTitle("Block Library")

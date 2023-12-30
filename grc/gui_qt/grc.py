@@ -61,6 +61,8 @@ class Application(QtWidgets.QApplication):
         QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts, True)
         QtWidgets.QApplication.__init__(self, settings.argv)
 
+        log.debug(f'devicePixelRatio {self.desktop().devicePixelRatio()}')
+
         if self.qsettings.value("appearance/theme") == "dark":
             try:
                 import qdarkstyle

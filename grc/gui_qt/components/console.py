@@ -79,10 +79,8 @@ HTML = '''
 
 
 class Console(QtWidgets.QDockWidget, base.Component):
-
     def __init__(self):
-        QtWidgets.QDockWidget.__init__(self)
-        base.Component.__init__(self)
+        super(Console, self).__init__()
 
         self.setObjectName('console')
         self.setWindowTitle('Console')
@@ -154,6 +152,8 @@ class Console(QtWidgets.QDockWidget, base.Component):
         self.actions['show_level'].setChecked = True
         self.handler.show_level = True
 
+        self.auto_scroll = True
+
 
     ### Actions
 
@@ -187,20 +187,21 @@ class Console(QtWidgets.QDockWidget, base.Component):
         log.debug("Creating toolbars")
 
 
-
-
     def add_line(self, line):
         # TODO: Support multiple columns for the HTML. DO better with the spacing
         #  and margins in the output
 
         self._text.append(line)
+        if self.auto_scroll:
+            self._text.verticalScrollBar().setValue(
+                self._text.verticalScrollBar().maximum())
 
     # Handlers for the view actions
     def clear_triggered(self):
         self._text.clear()
 
     def save_triggered(self):
-        pass
+        log.warning("Save reports not implemented")
 
     def show_level_toggled(self, checked):
         self.handler.show_level = checked

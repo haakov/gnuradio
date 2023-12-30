@@ -34,10 +34,8 @@ from .. import base
 log = logging.getLogger(__name__)
 
 class WikiTab(QtWidgets.QDockWidget, base.Component):
-
     def __init__(self):
-        QtWidgets.QDockWidget.__init__(self)
-        base.Component.__init__(self)
+        super(WikiTab, self).__init__()
 
         self.setObjectName('wiki_tab')
         self.setWindowTitle('Wiki')
@@ -47,9 +45,11 @@ class WikiTab(QtWidgets.QDockWidget, base.Component):
 
         try:
             from qtpy.QtWebEngineWidgets import QWebEngineView
+            self.hidden = False
         except ImportError:
             log.error("PyQt QWebEngine missing!")
             self.hide()
+            self.hidden = True
             return
 
         ### GUI Widgets
@@ -88,8 +88,9 @@ class WikiTab(QtWidgets.QDockWidget, base.Component):
         self.app.registerDockWidget(self, location=self.settings.window.WIKI_TAB_DOCK_LOCATION)
 
     def setURL(self, url):
-        self._text.load(url)
-        self._text.show()
+        if not self.hidden:
+            self._text.load(url)
+            self._text.show()
 
     ### Actions
 

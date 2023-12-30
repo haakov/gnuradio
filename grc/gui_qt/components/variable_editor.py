@@ -18,8 +18,7 @@ log = logging.getLogger(__name__)
 
 class VariableEditor(QtWidgets.QDockWidget, base.Component):
     def __init__(self):
-        QtWidgets.QDockWidget.__init__(self)
-        base.Component.__init__(self)
+        super(VariableEditor, self).__init__()
 
         self.setObjectName('variable_editor')
         self.setWindowTitle('Variable Editor')
