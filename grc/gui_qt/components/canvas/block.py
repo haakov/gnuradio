@@ -355,12 +355,8 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
     def mousePressEvent(self, e):
         super(self.__class__, self).mousePressEvent(e)
         log.debug(f"{self} clicked")
-        try:
-            # self.parent.app.DocumentationTab.setText(self.documentation[self.key])
-            prefix = str(self.parent.app.platform.config.wiki_block_docs_url_prefix)
-            self.parent.app.WikiTab.setURL(QUrl(prefix + self.label.replace(" ", "_")))
-        except KeyError:
-            pass
+        url_prefix = str(self.parent.app.platform.config.wiki_block_docs_url_prefix)
+        self.parent.app.WikiTab.setURL(QUrl(url_prefix + self.label.replace(" ", "_")))
 
         self.moveToTop()
 
