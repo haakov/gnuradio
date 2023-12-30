@@ -155,7 +155,7 @@ def run_qt(args, log):
                 # Use the native menubar rather than leaving it in the window
                 settings.window.NATIVE_MENUBAR = True
         except:
-            log.error("Unable to determine the Linux desktop system")
+            log.warning("Unable to determine the Linux desktop system")
 
     elif platform.system() == "Darwin":
         log.debug("Detected Mac OS X")
@@ -200,7 +200,7 @@ def main():
     # TODO: parser.add_argument('--config')
 
     # Logging support
-    parser.add_argument('--log', choices=['debug', 'info', 'warning', 'error', 'critical'], default='debug')
+    parser.add_argument('--log', choices=['debug', 'info', 'warning', 'error', 'critical'], default='info')
     # TODO: parser.add_argument('--log-output')
 
     # Graphics framework (QT or GTK)
@@ -221,13 +221,13 @@ def main():
     console.setLevel(LOG_LEVELS[args.log])
 
     # Output format
-    msg_format = '[%(levelname)s] %(message)s'
+    console_msg_format = '[%(levelname)s] %(message)s'
     # If debug output is enabled for the console, then add the file and line numbers. (MAYBE: Module too?)
     if args.log == 'debug':
-        msg_format += ' (%(name)s:%(lineno)s)'
-    formatter = logging.Formatter(msg_format)
+        console_msg_format += ' (%(name)s:%(lineno)s)'
+    console_formatter = logging.Formatter(console_msg_format)
     #formatter = utils.log.ConsoleFormatter()
-    console.setFormatter(formatter)
+    console.setFormatter(console_formatter)
     log.addHandler(console)
 
     # Print the startup message
@@ -238,10 +238,17 @@ def main():
     log_file = os.path.expanduser('~') + "/.gnuradio/grc.log"
     try:
         fileHandler = logging.FileHandler(log_file)
-        fileHandler.setLevel(logging.DEBUG)
-        fileHandler.setFormatter(formatter)
+        file_msg_format = '%(asctime)s [%(levelname)s] %(message)s'
+        if args.log == 'debug':
+            file_msg_format += ' (%(name)s:%(lineno)s)'
+            fileHandler.setLevel(logging.DEBUG)
+            log.info(f'Logging to {log_file} (DEBUG and higher)')
+        else:
+            fileHandler.setLevel(logging.INFO)
+            log.info(f'Logging to {log_file} (INFO and higher)')
+        file_formatter = logging.Formatter(file_msg_format)
+        fileHandler.setFormatter(file_formatter)
         log.addHandler(fileHandler)
-        log.info(f'Logging to {log_file}')
     except PermissionError:
         log.error(f'Cannot write to {log_file} (Permission denied)')
 
