@@ -270,10 +270,10 @@ class Flowgraph(QtWidgets.QGraphicsScene, base.Component, CoreFlowgraph):
     def mousePressEvent(self, event):
         item = self.itemAt(event.scenePos(), QtGui.QTransform())
         selected = self.selectedItems()
-        self.movingThings = False
+        self.moving_blocks = False
         if item:
             if item.is_block:
-                self.movingThings = True
+                self.moving_blocks = True
         self.clickPos = event.scenePos()
         conn_made = False
         if item:
@@ -341,7 +341,7 @@ class Flowgraph(QtWidgets.QGraphicsScene, base.Component, CoreFlowgraph):
             self.newConnection = None
         else:
             if self.clickPos != event.scenePos():
-                if self.movingThings:
+                if self.moving_blocks:
                     self.itemMoved.emit(event.scenePos() - self.clickPos)
         """
         if event.button() == Qt.LeftButton:
