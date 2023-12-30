@@ -342,10 +342,6 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
             -2.5, -2.5, self.width + 5, self.height + (5 if not self.comment else 50)
         )  # margin to avoid artifacts
 
-    def registerMoveStarting(self):
-        self.moving = True
-        self.oldPos = self.states["coordinate"]
-
     def setStates(self, states):
         for k, v in states.items():
             self.states[k] = v

@@ -208,7 +208,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         return self.tabWidget.currentWidget().flowgraph
 
     @QtCore.Slot(QtCore.QPointF)
-    def createMove(self, diff):
+    def registerMove(self, diff):
         self.currentFlowgraph.set_saved(False)
         action = MoveAction(self.currentFlowgraph, diff)
         self.currentFlowgraph.undoStack.push(action)
@@ -885,7 +885,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
     def connect_fg_signals(self, fg):
         fg.selectionChanged.connect(self.updateActions)
         fg.selectionChanged.connect(self.updateDocTab)
-        fg.itemMoved.connect(self.createMove)
+        fg.itemMoved.connect(self.registerMove)
         fg.newElement.connect(self.registerNewElement)
         fg.deleteElement.connect(self.registerDeleteElement)
         fg.blockPropsChange.connect(self.registerBlockPropsChange)
