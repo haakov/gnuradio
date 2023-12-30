@@ -135,10 +135,10 @@ class Console(QtWidgets.QDockWidget, base.Component):
         # Register the dock widget through the AppController.
         # The AppController then tries to find a saved dock location from the preferences
         # before calling the MainWindow Controller to add the widget.
-        self.app.registerDockWidget(self, location=self.settings.window.REPORTS_DOCK_LOCATION)
+        self.app.registerDockWidget(self, location=self.settings.window.CONSOLE_DOCK_LOCATION)
 
         # Register the menus
-        self.app.registerMenu(self.menus["reports"])
+        self.app.registerMenu(self.menus["console"])
 
         # Register a new handler for the root logger that outputs messages of
         #  INFO and HIGHER to the reports view
@@ -151,9 +151,6 @@ class Console(QtWidgets.QDockWidget, base.Component):
 
         self.actions['show_level'].setChecked = True
         self.handler.show_level = True
-
-        self.auto_scroll = True
-
 
     ### Actions
 
@@ -168,20 +165,24 @@ class Console(QtWidgets.QDockWidget, base.Component):
         actions['clear'] = Action(Icons("document-close"), _("clear"), self,
                                 statusTip=_("clear-tooltip"))
         actions['show_level'] = Action(_("show-level"), self, statusTip=_("show-level"), checkable=True, checked=True)
-        actions['show_level'].setChecked = False  # Apparently, the checked named argument doesn't work
+
+        actions['auto_scroll'] = Action(_("auto-scroll"), self, statusTip=_("auto-scroll"), checkable=True, checked=True)
 
     def createMenus(self, actions, menus):
         ''' Setup the view's menus '''
 
         log.debug("Creating menus")
 
-        reports = QtWidgets.QMenu("&Reports")
-        reports.setObjectName("reports::menu")
+        console_menu = QtWidgets.QMenu("&Console")
+        console_menu.setObjectName("console::menu")
 
-        reports.addAction(actions["save"])
-        reports.addAction(actions["clear"])
-        reports.addAction(actions["show_level"])
-        menus["reports"] = reports
+        # Not needed, we have FileHandler logging in main.py
+        #console_menu.addAction(actions["save"])
+
+        console_menu.addAction(actions["clear"])
+        console_menu.addAction(actions["show_level"])
+        console_menu.addAction(actions["auto_scroll"])
+        menus["console"] = console_menu
 
     def createToolbars(self, actions, toolbars):
         log.debug("Creating toolbars")
@@ -192,7 +193,7 @@ class Console(QtWidgets.QDockWidget, base.Component):
         #  and margins in the output
 
         self._text.append(line)
-        if self.auto_scroll:
+        if self.actions["auto_scroll"].isChecked():
             self._text.verticalScrollBar().setValue(
                 self._text.verticalScrollBar().maximum())
 
