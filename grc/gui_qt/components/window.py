@@ -45,6 +45,7 @@ from .undoable_actions import (
     NewElementAction,
     DeleteElementAction,
     BlockPropsChangeAction,
+    BussifyAction
 )
 from .preferences import PreferencesDialog
 from .example_browser import ExampleBrowser
@@ -1113,15 +1114,15 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
     def toggle_source_bus_triggered(self):
         log.debug("toggle_source_bus")
-        for b in self.currentFlowgraph.selected_blocks():
-            b.bussify("source")
-        self.currentFlowgraph.update()
+        bussifyCommand = BussifyAction(self.currentFlowgraph, 'source')
+        self.currentFlowgraph.undoStack.push(bussifyCommand)
+        self.updateActions()
 
     def toggle_sink_bus_triggered(self):
-        log.debug("toggle_source_bus")
-        for b in self.currentFlowgraph.selected_blocks():
-            b.bussify("sink")
-        self.currentFlowgraph.update()
+        log.debug("toggle_sink_bus")
+        bussifyCommand = BussifyAction(self.currentFlowgraph, 'sink')
+        self.currentFlowgraph.undoStack.push(bussifyCommand)
+        self.updateActions()
 
     def errors_triggered(self):
         log.debug("errors")

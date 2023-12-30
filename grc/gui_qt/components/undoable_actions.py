@@ -137,10 +137,25 @@ class BlockPropsChangeAction(QUndoCommand):
         self.block.create_shapes_and_labels()
         self.flowgraph.update()
 
+class BussifyAction(QUndoCommand):
+    def __init__(self, flowgraph, direction):
+        QUndoCommand.__init__(self)
+        log.debug("init BussifyAction")
+        self.setText(f'Toggle bus {direction}')
+        self.flowgraph = flowgraph
+        self.direction = direction
+        self.blocks = flowgraph.selected_blocks()
 
-class ToggleBusCommand(ChangeStateAction):
-    def __init__(self):
-        pass
+    def bussify(self):
+        for block in self.blocks:
+            block.bussify(self.direction)
+        self.flowgraph.update()
+
+    def redo(self):
+        self.bussify()
+
+    def undo(self):
+        self.bussify()
 
 # Blocks and connections
 class NewElementAction(QUndoCommand):
