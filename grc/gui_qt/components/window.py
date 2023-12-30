@@ -32,7 +32,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QStandardItemModel
 
 # Custom modules
-from . import FlowgraphView
+from .flowgraph_view import FlowgraphView
 from .example_browser import ExampleBrowser, Worker, WorkerSignals
 from .. import base, Constants, Utils
 from .undoable_actions import (
