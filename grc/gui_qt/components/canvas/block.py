@@ -361,7 +361,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         log.debug(f"{self} clicked")
         try:
             # self.parent.app.DocumentationTab.setText(self.documentation[self.key])
-            prefix = str(self.parent.app.platform.Config.wiki_block_docs_url_prefix)
+            prefix = str(self.parent.app.platform.config.wiki_block_docs_url_prefix)
             self.parent.app.WikiTab.setURL(QUrl(prefix + self.label.replace(" ", "_")))
         except KeyError:
             pass
