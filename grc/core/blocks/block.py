@@ -19,7 +19,7 @@ from ._templates import MakoTemplates
 from ._flags import Flags
 
 from ..base import Element
-from ..params import Param
+from ..utils import attributed_str
 from ..utils.descriptors import lazy_property
 
 
@@ -597,7 +597,7 @@ class Block(Element):
 
     def child_elements(self):
         return itertools.chain(self.params.values(), self.ports())
-    
+
     def connections(self):
         block_connections = []
         for port in self.ports():
