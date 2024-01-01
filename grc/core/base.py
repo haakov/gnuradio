@@ -23,8 +23,6 @@ class Element(object):
         Validate this element and call validate on all children.
         Call this base method before adding error messages in the subclass.
         """
-        del self._error_messages[:]
-
         for child in self.child_elements():
             child.validate()
 

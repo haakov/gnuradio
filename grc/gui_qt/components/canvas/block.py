@@ -405,3 +405,22 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         self.props_dialog = PropsDialog(self, self.force_show_id)
         self.props_dialog.show()
 
+    def update_bus_logic(self):
+        ###############################
+        # Bus Logic
+        ###############################
+        for direc in {'source', 'sink'}:
+            if direc == 'source':
+                ports = self.sources
+                ports_gui = self.filter_bus_port(self.sources)
+                bus_state = self.bus_source
+            else:
+                ports = self.sinks
+                ports_gui = self.filter_bus_port(self.sinks)
+                bus_state = self.bus_sink
+            if 'bus' in map(lambda a: a.dtype, ports):
+                for port in ports_gui:
+                    self.parent_flowgraph.removeItem(port)
+        #super(Block, self).update_bus_logic()
+        super(self.__class__, self).update_bus_logic()
+
