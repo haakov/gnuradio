@@ -398,7 +398,7 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         return QtCore.QPointF(self.x() + self.width / 2, self.y() + self.height / 2)
 
     def open_properties(self):
-        self.props_dialog = PropsDialog(self, self.force_show_id)
+        self.props_dialog = PropsDialog(self.core, self.force_show_id)
         self.props_dialog.show()
 
     def update_bus_logic(self):

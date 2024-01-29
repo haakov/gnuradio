@@ -216,10 +216,10 @@ def test_open_properties(qtbot, qapp_cls_):
         ),
     )
     qtbot.wait(100)
-    assert qapp_cls_.MainWindow.currentFlowgraph.options_block.props_dialog.isVisible()
+    assert qapp_cls_.MainWindow.currentFlowgraph.options_block.gui.props_dialog.isVisible()
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Escape)
     assert (
-        not qapp_cls_.MainWindow.currentFlowgraph.options_block.props_dialog.isVisible()
+        not qapp_cls_.MainWindow.currentFlowgraph.options_block.gui.props_dialog.isVisible()
     )
 
 

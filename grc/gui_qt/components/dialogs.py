@@ -123,7 +123,7 @@ class PropsDialog(QtWidgets.QDialog):
         self.example_list = QtWidgets.QListWidget()
         self.example_list.itemDoubleClicked.connect(lambda ex: self.open_example(ex))
         try:
-            examples = self._block.parent.app.BlockLibrary.get_examples(self._block.key)
+            examples = self._block.parent.gui.app.BlockLibrary.get_examples(self._block.key)
             ex_amount = len(examples)
             self.example_list.addItems(examples)
             self.example_layout.addWidget(self.example_list)
@@ -160,8 +160,8 @@ class PropsDialog(QtWidgets.QDialog):
                         par.param.set_value(key)
         self._block.rewrite()
         self._block.validate()
-        self._block.create_shapes_and_labels()
-        self._block.parent.blockPropsChange.emit(self._block)
+        self._block.gui.create_shapes_and_labels()
+        self._block.parent.gui.blockPropsChange.emit(self._block)
 
     def open_example(self, ex=None):
         # example is None if the "Open examples" button was pushed
