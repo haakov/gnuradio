@@ -116,7 +116,7 @@ def find_blocks(flowgraph, block_type):
 def click_on(qtbot, app, item, button="left"):
     scaling = app.MainWindow.screen().devicePixelRatio()
     view = app.MainWindow.currentView
-    click_pos = scaling * global_pos(item, view)
+    click_pos = scaling * global_pos(item.gui, view)
     pag.click(click_pos.x(), click_pos.y(), button=button)
     qtbot.wait(100)
 
@@ -138,7 +138,7 @@ def redo(qtbot, app):
 def delete_block(qtbot, app, block):
     view = app.MainWindow.currentView
     scaling = app.MainWindow.screen().devicePixelRatio()
-    click_pos = scaling * global_pos(block, view)
+    click_pos = scaling * global_pos(block.gui, view)
     pag.click(click_pos.x(), click_pos.y(), button="left")
     qtbot.wait(100)
     qtbot.keyClick(app.focusWidget(), QtCore.Qt.Key_Delete)
@@ -211,7 +211,7 @@ def test_open_properties(qtbot, qapp_cls_):
         qapp_cls_.MainWindow.currentView.viewport(),
         QtCore.Qt.LeftButton,
         pos=qapp_cls_.MainWindow.currentView.mapFromScene(
-            qapp_cls_.MainWindow.currentFlowgraph.options_block.pos()
+            qapp_cls_.MainWindow.currentFlowgraph.options_block.gui.pos()
             + QtCore.QPointF(15.0, 15.0)
         ),
     )
@@ -229,7 +229,7 @@ def test_change_id(qtbot, qapp_cls_):
         qapp_cls_.MainWindow.currentView.viewport(),
         QtCore.Qt.LeftButton,
         pos=qapp_cls_.MainWindow.currentView.mapFromScene(
-            opts.pos() + QtCore.QPointF(15.0, 15.0)
+            opts.gui.pos() + QtCore.QPointF(15.0, 15.0)
         ),
     )
     qtbot.wait(100)
@@ -345,8 +345,8 @@ def test_connection(qtbot, qapp_cls_):
         qtbot.wait(50)
     pag.mouseUp()
 
-    click_on(qtbot, qapp_cls_, n_src.sources[0])
-    click_on(qtbot, qapp_cls_, n_sink.sinks[0])
+    click_on(qtbot, qapp_cls_, n_src.sources[0].gui)
+    click_on(qtbot, qapp_cls_, n_sink.sinks[0].gui)
     assert len(fg.connections) == 1
 
     undo(qtbot, qapp_cls_)
@@ -438,7 +438,7 @@ def test_bus(qtbot, qapp_cls_):
 
     assert len(n_sink.sinks) == 1
 
-    click_pos = scaling * global_pos(n_sink, view)
+    click_pos = scaling * global_pos(n_sink.gui, view)
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
     qtbot.wait(100)
     param_index = 0

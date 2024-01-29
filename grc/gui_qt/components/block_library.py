@@ -247,7 +247,7 @@ class BlockLibrary(QtWidgets.QDockWidget, base.Component):
         if block_key is None:
             return
 
-        fg = self.app.MainWindow.currentFlowgraph
+        fg = self.app.MainWindow.currentGUIFlowgraph
         view = self.app.MainWindow.currentView
         pos_ = view.mapToScene(view.viewport().rect().center())
         fg.add_block(block_key, pos=(pos_.x(), pos_.y()))

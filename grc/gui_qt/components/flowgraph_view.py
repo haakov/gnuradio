@@ -30,6 +30,7 @@ class FlowgraphView(
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
         self.flowgraph = Flowgraph(self)
+        self.GUIFlowgraph = self.flowgraph.gui
 
         self.scalefactor = 0.8
         self.scale(self.scalefactor, self.scalefactor)
@@ -40,8 +41,8 @@ class FlowgraphView(
         else:
             self.initEmpty()
 
-        self.setScene(self.flowgraph)
-        self.fitInView(self.flowgraph.sceneRect(), QtCore.Qt.KeepAspectRatio)
+        self.setScene(self.flowgraph.gui)
+        self.fitInView(self.flowgraph.gui.sceneRect(), QtCore.Qt.KeepAspectRatio)
         if self.app.qsettings.value("appearance/theme", "dark") == "dark":
             self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(25, 35, 45)))
         else:

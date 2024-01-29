@@ -64,10 +64,18 @@ class ConnectionArrow(QtWidgets.QGraphicsPathItem):
         painter.drawPath(self._arrowhead)
 
 
-class Connection(CoreConnection, QtWidgets.QGraphicsPathItem):
-
+class Connection(CoreConnection):
     def __init__(self, parent, source, sink):
         CoreConnection.__init__(self, parent, source, sink)
+
+        self.gui = GUIConnection(self, source, sink)
+
+        self.source = source
+        self.sink = sink
+
+class GUIConnection(QtWidgets.QGraphicsPathItem):
+    def __init__(self, core, source, sink):
+        self.core = core
         QtWidgets.QGraphicsItem.__init__(self)
 
         self.source = source

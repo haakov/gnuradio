@@ -19,7 +19,7 @@ LONG_VALUE = 20  # maximum length of a param string.
 # if exceeded, '...' will be displayed
 
 
-class Block(QtWidgets.QGraphicsItem, CoreBlock):
+class Block(CoreBlock):
     @classmethod
     def make_cls_with_base(cls, super_cls):
         name = super_cls.__name__
@@ -30,34 +30,42 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
     def __init__(self, parent, **n):
         # super(self.__class__, self).__init__(parent, **n)
         CoreBlock.__init__(self, parent)
-        QtWidgets.QGraphicsItem.__init__(self)
-
-        for sink in self.sinks:
-            sink.setParentItem(self)
-        for source in self.sources:
-            source.setParentItem(self)
 
         self.width = 300  # default shouldnt matter, it will change immedaitely after the first paint
         # self.block_key = block_key
         # self.block_label = block_label
         self.block_label = self.key
 
-        if "coordinate" not in self.states.keys():
-            self.states["coordinate"] = (500, 300)
-            self.setPos(
-                QtCore.QPointF(
-                    self.states["coordinate"][0], self.states["coordinate"][1]
-                )
-            )
         if "rotation" not in self.states.keys():
             self.states["rotation"] = 0.0
 
+        self.gui = GUIBlock(self, parent)
+
+
+class GUIBlock(QtWidgets.QGraphicsItem):
+    def __init__(self, core, parent, **n):
+        self.core = core
+        self.parent = core.parent.gui
+        QtWidgets.QGraphicsItem.__init__(self)
+
+        for sink in self.core.sinks:
+            sink.gui.setParentItem(self)
+        for source in self.core.sources:
+            source.gui.setParentItem(self)
         self.create_shapes_and_labels()
+
+        if "coordinate" not in self.core.states.keys():
+            self.core.states["coordinate"] = (500, 300)
+            self.setPos(
+                QtCore.QPointF(
+                    self.core.states["coordinate"][0], self.core.states["coordinate"][1]
+                )
+            )
 
         self.moving = False
         self.oldPos = (self.x(), self.y())
         self.newPos = (self.x(), self.y())
-        self.states["coordinate"] = (self.x(), self.y())
+        self.core.states["coordinate"] = (self.x(), self.y())
         self.oldData = None
         self.props_dialog = None
 
@@ -81,7 +89,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         # figure out height of block based on how many params there are
         i = 30
 
-        for key, item in self.params.items():
+        for key, item in self.core.params.items():
             value = item.value
             if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
                 i += 20
@@ -98,7 +106,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
                 min_height = (
                     2 * Constants.PORT_BORDER_SEPARATION +
                     sum(
-                        port.height + Constants.PORT_SPACING
+                        port.gui.height + Constants.PORT_SPACING
                         for port in ports
                         if port.dtype == "bus"
                     ) - Constants.PORT_SPACING
@@ -106,18 +114,18 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
 
             else:
                 if ports:
-                    min_height -= ports[-1].height
+                    min_height -= ports[-1].gui.height
             return min_height
 
         self.height = max(
             self.height,
-            get_min_height_for_ports(self.active_sinks),
-            get_min_height_for_ports(self.active_sources),
+            get_min_height_for_ports(self.core.active_sinks),
+            get_min_height_for_ports(self.core.active_sources),
         )
         # figure out width of block based on widest line of text
         fm = QtGui.QFontMetrics(font)
-        largest_width = fm.width(self.label)
-        for key, item in self.params.items():
+        largest_width = fm.width(self.core.label)
+        for key, item in self.core.params.items():
             name = item.name
             value = item.value
             if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
@@ -132,11 +140,11 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         self.width = largest_width + 15
 
         bussified = (
-            self.current_bus_structure["source"],
-            self.current_bus_structure["sink"],
+            self.core.current_bus_structure["source"],
+            self.core.current_bus_structure["sink"],
         )
         for ports, has_busses in zip(
-            (self.active_sources, self.active_sinks), bussified
+            (self.core.active_sources, self.core.active_sinks), bussified
         ):
             if not ports:
                 continue
@@ -146,14 +154,14 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
                 else ports[0].height + Constants.PORT_SPACING
             )
             offset = (
-                self.height - (len(ports) - 1) * port_separation - ports[0].height
+                self.height - (len(ports) - 1) * port_separation - ports[0].gui.height
             ) / 2
             for port in ports:
                 if port._dir == "sink":
-                    port.setPos(-15, offset)
+                    port.gui.setPos(-15, offset)
                 else:
-                    port.setPos(self.width, offset)
-                port.create_shapes_and_labels()
+                    port.gui.setPos(self.width, offset)
+                port.gui.create_shapes_and_labels()
                 """
                 port.coordinate = {
                     0: (+self.width, offset),
@@ -174,9 +182,9 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
         self.setTransformOriginPoint(self.width / 2, self.height / 2)
 
     def create_port_labels(self):
-        for ports in (self.active_sinks, self.active_sources):
+        for ports in (self.core.active_sinks, self.core.active_sources):
             for port in ports:
-                port.create_shapes_and_labels()
+                port.gui.create_shapes_and_labels()
                 # max_width = max(max_width, port.width_with_label)
             # for port in ports:
             #    port.width = max_width
@@ -188,12 +196,12 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
             Explicit is better than a chain of if/else expressions,
             so this was extracted into a nested function.
             """
-            if self.is_dummy_block:
+            if self.core.is_dummy_block:
                 return colors.MISSING_BLOCK_BACKGROUND_COLOR
-            if self.state == "bypassed":
+            if self.core.state == "bypassed":
                 return colors.BLOCK_BYPASSED_COLOR
-            if self.state == "enabled":
-                if self.deprecated:
+            if self.core.state == "enabled":
+                if self.core.deprecated:
                     return colors.BLOCK_DEPRECATED_BACKGROUND_COLOR
                 return colors.BLOCK_ENABLED_COLOR
             return colors.BLOCK_DISABLED_COLOR
@@ -202,11 +210,11 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
             """
             Get the border color for this block
             """
-            if self.is_dummy_block:
+            if self.core.is_dummy_block:
                 return colors.MISSING_BLOCK_BORDER_COLOR
-            if self.deprecated:
+            if self.core.deprecated:
                 return colors.BLOCK_DEPRECATED_BORDER_COLOR
-            if self.state == "enabled":
+            if self.core.state == "enabled":
                 return colors.BORDER_COLOR
             return colors.BORDER_COLOR_DISABLED
 
@@ -217,7 +225,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
     def paint(self, painter, option, widget):
         if (self.hide_variables and (self.is_variable or self.is_import)) or (self.hide_disabled_blocks and not self.enabled):
             return
-        self.states["coordinate"] = (self.x(), self.y())
+        self.core.states["coordinate"] = (self.x(), self.y())
         # Set font
         font = QtGui.QFont("Helvetica", 10)
         # font.setStretch(70) # makes it more condensed
@@ -243,19 +251,19 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
 
         # Draw block label text
         painter.setFont(font)
-        if self.is_valid():
+        if self.core.is_valid():
             painter.setPen(Qt.black)
         else:
             painter.setPen(Qt.red)
         painter.drawText(
             QtCore.QRectF(0, 0 - self.height / 2 + 15, self.width, self.height),
             Qt.AlignCenter,
-            self.label,
+            self.core.label,
         )  # NOTE the 3rd/4th arg in  QRectF seems to set the bounding box of the text, so if there is ever any clipping, thats why
 
         # Draw param text
         y_offset = 30  # params start 30 down from the top of the box
-        for key, item in self.params.items():
+        for key, item in self.core.params.items():
             name = item.name
             value = item.value
             is_evaluated = item.value != str(item.get_evaluated())
@@ -313,7 +321,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
             markups.append('Complexity: {num} bal'.format(
                 num=Utils.num_to_str(complexity)))
 
-        if self.show_block_comments and self.comment:
+        if self.show_block_comments and self.core.comment:
             markups.append(self.comment)
 
         if markups:  # TODO: Calculate comment box size
@@ -326,7 +334,7 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
 
     def boundingRect(self):  # required to have
         return QtCore.QRectF(  # TODO: Calculate comment box size
-            -2.5, -2.5, self.width + 5, self.height + (5 if not self.comment else 50)
+            -2.5, -2.5, self.width + 5, self.height + (5 if not self.core.comment else 50)
         )  # margin to avoid artifacts
 
     def setStates(self, states):
@@ -342,8 +350,8 @@ class Block(QtWidgets.QGraphicsItem, CoreBlock):
     def mousePressEvent(self, e):
         super(self.__class__, self).mousePressEvent(e)
         log.debug(f"{self} clicked")
-        url_prefix = str(self.parent.app.platform.config.wiki_block_docs_url_prefix)
-        self.parent.app.WikiTab.setURL(QUrl(url_prefix + self.label.replace(" ", "_")))
+        url_prefix = str(self.core.parent.gui.app.platform.config.wiki_block_docs_url_prefix)
+        self.core.parent.gui.app.WikiTab.setURL(QUrl(url_prefix + self.core.label.replace(" ", "_")))
 
         self.moveToTop()
 

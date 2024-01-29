@@ -10,15 +10,15 @@ log = logging.getLogger(__name__)
 # change params, toggle type.
 # Basically anything that's not cut/paste or new/delete
 class ChangeStateAction(QUndoCommand):
-    def __init__(self, flowgraph):
+    def __init__(self, g_flowgraph):
         QUndoCommand.__init__(self)
         log.debug("init ChangeState")
         self.oldStates = []
         self.oldParams = []
         self.newStates = []
         self.newParams = []
-        self.flowgraph = flowgraph
-        self.blocks = flowgraph.selected_blocks()
+        self.g_flowgraph = g_flowgraph
+        self.blocks = g_flowgraph.selected_blocks()
         for block in self.blocks:
             self.oldStates.append(copy(block.states))
             self.newStates.append(copy(block.states))
@@ -190,26 +190,26 @@ class NewElementAction(QUndoCommand):
 
 
 class DeleteElementAction(QUndoCommand):
-    def __init__(self, flowgraph):
+    def __init__(self, g_flowgraph):
         QUndoCommand.__init__(self)
         log.debug("init DeleteElementAction")
         self.setText('Delete')
-        self.flowgraph = flowgraph
-        self.connections = flowgraph.selected_connections()
-        self.blocks = flowgraph.selected_blocks()
+        self.g_flowgraph = g_flowgraph
+        self.connections = g_flowgraph.selected_connections()
+        self.blocks = g_flowgraph.selected_blocks()
         for block in self.blocks:
-            self.connections = self.connections + block.connections()
+            self.connections = self.connections + block.core.connections()
 
     def redo(self):
         for con in self.connections:
-            self.flowgraph.remove_element(con)
+            self.g_flowgraph.remove_element(con)
         for block in self.blocks:
-            self.flowgraph.remove_element(block)
-        self.flowgraph.update()
+            self.g_flowgraph.remove_element(block)
+        self.g_flowgraph.update()
 
     def undo(self):
         for block in self.blocks:
-            self.flowgraph.add_element(block)
+            self.g_flowgraph.add_element(block)
         for con in self.connections:
-            self.flowgraph.add_element(con)
-        self.flowgraph.update()
+            self.g_flowgraph.add_element(con)
+        self.g_flowgraph.update()

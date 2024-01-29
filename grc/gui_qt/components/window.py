@@ -161,7 +161,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         )
         self.tabWidget.addTab(fg_view, "Untitled")
         self.setCentralWidget(self.tabWidget)
-        self.connect_fg_signals(self.currentFlowgraph)
+        self.connect_fg_signals(self.currentGUIFlowgraph)
         # self.new_tab(self.flowgraph)
 
         self.clipboard = None
@@ -195,36 +195,39 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         return self.tabWidget.currentWidget()
 
     @property
+    def currentGUIFlowgraph(self):
+        return self.tabWidget.currentWidget().GUIFlowgraph
+
+    @property
     def currentFlowgraph(self):
-        # something is fishy here
         return self.tabWidget.currentWidget().flowgraph
 
     @QtCore.Slot(QtCore.QPointF)
     def registerMove(self, diff):
-        self.currentFlowgraph.set_saved(False)
-        action = MoveAction(self.currentFlowgraph, diff)
-        self.currentFlowgraph.undoStack.push(action)
+        self.currentGUIFlowgraph.set_saved(False)
+        action = MoveAction(self.currentGUIFlowgraph, diff)
+        self.currentGUIFlowgraph.undoStack.push(action)
         self.updateActions()
 
     @QtCore.Slot(Element)
     def registerNewElement(self, elem):
-        self.currentFlowgraph.set_saved(False)
-        action = NewElementAction(self.currentFlowgraph, elem)
-        self.currentFlowgraph.undoStack.push(action)
+        self.currentGUIFlowgraph.set_saved(False)
+        action = NewElementAction(self.currentGUIFlowgraph, elem)
+        self.currentGUIFlowgraph.undoStack.push(action)
         self.updateActions()
 
     @QtCore.Slot(Element)
     def registerDeleteElement(self, elem):
-        self.currentFlowgraph.set_saved(False)
-        action = DeleteElementAction(self.currentFlowgraph, elem)
-        self.currentFlowgraph.undoStack.push(action)
+        self.currentGUIFlowgraph.set_saved(False)
+        action = DeleteElementAction(self.currentGUIFlowgraph, elem)
+        self.currentGUIFlowgraph.undoStack.push(action)
         self.updateActions()
 
     @QtCore.Slot(Element)
     def registerBlockPropsChange(self, elem):
-        self.currentFlowgraph.set_saved(False)
-        action = BlockPropsChangeAction(self.currentFlowgraph, elem)
-        self.currentFlowgraph.undoStack.push(action)
+        self.currentGUIFlowgraph.set_saved(False)
+        action = BlockPropsChangeAction(self.currentGUIFlowgraph, elem)
+        self.currentGUIFlowgraph.undoStack.push(action)
         self.updateActions()
 
     def createActions(self, actions):
@@ -554,7 +557,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         pass
         """
         doc_txt = self._app().DocumentationTab._text
-        blocks = self.currentFlowgraph.selected_blocks()
+        blocks = self.currentGUIFlowgraph.selected_blocks()
         if len(blocks) == 1:
             #print(blocks[0].documentation)
             doc_string = blocks[0].documentation['']
@@ -564,13 +567,13 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
     def updateActions(self):
         """Update the available actions based on what is selected"""
 
-        blocks = self.currentFlowgraph.selected_blocks()
-        conns = self.currentFlowgraph.selected_connections()
-        undoStack = self.currentFlowgraph.undoStack
+        blocks = self.currentGUIFlowgraph.selected_blocks()
+        conns = self.currentGUIFlowgraph.selected_connections()
+        undoStack = self.currentGUIFlowgraph.undoStack
         canUndo = undoStack.canUndo()
         canRedo = undoStack.canRedo()
         valid_fg = self.currentFlowgraph.is_valid()
-        saved_fg = self.currentFlowgraph.saved
+        saved_fg = self.currentGUIFlowgraph.saved
 
         self.actions["save"].setEnabled(not saved_fg)
 
@@ -637,7 +640,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
                 self.actions["horizontal_align_right"].setEnabled(True)
 
             for block in blocks:
-                if not block.can_bypass():
+                if not block.core.can_bypass():
                     self.actions["bypass"].setEnabled(False)
                     break
 
@@ -894,7 +897,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         fg_view.centerOn(0, 0)
         initial_state = self.platform.parse_flow_graph("")
         fg_view.flowgraph.import_data(initial_state)
-        self.connect_fg_signals(fg_view.flowgraph)
+        self.connect_fg_signals(fg_view.flowgraph.gui)
         log.debug("Adding flowgraph view")
 
         self.tabWidget.addTab(fg_view, "Untitled")
@@ -910,10 +913,10 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
             initial_state = self.platform.parse_flow_graph(filename)
             self.tabWidget.addTab(new_flowgraph, os.path.basename(filename))
             self.tabWidget.setCurrentIndex(self.tabWidget.count() - 1)
-            self.currentFlowgraph.import_data(initial_state)
-            self.currentFlowgraph.filename = filename
-            self.connect_fg_signals(self.currentFlowgraph)
-            self.currentFlowgraph.saved = True
+            self.currentGUIFlowgraph.import_data(initial_state)
+            self.currentGUIFlowgraph.filename = filename
+            self.connect_fg_signals(self.currentGUIFlowgraph)
+            self.currentGUIFlowgraph.saved = True
 
     def open_example(self, example_path):
         log.debug("open example")
@@ -922,17 +925,17 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
     def save_triggered(self):
         log.debug("save")
-        filename = self.currentFlowgraph.filename
+        filename = self.currentGUIFlowgraph.filename
 
         if filename:
             try:
-                self.platform.save_flow_graph(filename, self.currentFlowgraph)
+                self.platform.save_flow_graph(filename, self.currentGUIFlowgraph)
             except IOError:
                 log.error("Save failed")
                 return
 
             log.info(f"Saved {filename}")
-            self.currentFlowgraph.set_saved(True)
+            self.currentGUIFlowgraph.set_saved(True)
         else:
             log.debug("Flowgraph does not have a filename")
             self.save_as_triggered()
@@ -945,15 +948,15 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
             filter="Flow Graph Files (*.grc);;All files (*.*)",
         )
         if filename:
-            self.currentFlowgraph.filename = filename
+            self.currentGUIFlowgraph.filename = filename
             try:
-                self.platform.save_flow_graph(filename, self.currentFlowgraph)
+                self.platform.save_flow_graph(filename, self.currentGUIFlowgraph)
             except IOError:
                 log.error("Save (as) failed")
                 return
 
             log.info(f"Saved (as) {filename}")
-            self.currentFlowgraph.set_saved(True)
+            self.currentGUIFlowgraph.set_saved(True)
         else:
             log.debug("Cancelled Save As action")
 
@@ -966,7 +969,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         )
         if filename:
             try:
-                self.platform.save_flow_graph(filename, self.currentFlowgraph)
+                self.platform.save_flow_graph(filename, self.currentGUIFlowgraph)
             except IOError:
                 log.error("Save (copy) failed")
 
@@ -980,7 +983,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         if tab_index is None:
             tab_index = self.tabWidget.currentIndex()
 
-        if self.currentFlowgraph.saved:
+        if self.currentGUIFlowgraph.saved:
             self.tabWidget.removeTab(tab_index)
         else:
             message = "Save changes before closing?"
@@ -999,7 +1002,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
                 return
             else:
                 self.save_triggered()
-                if self.currentFlowgraph.saved:
+                if self.currentGUIFlowgraph.saved:
                     self.tabWidget.removeTab(tab_index)
                 else:
                     return
@@ -1039,79 +1042,79 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
     def undo_triggered(self):
         log.debug("undo")
-        self.currentFlowgraph.undoStack.undo()
+        self.currentGUIFlowgraph.undoStack.undo()
         self.updateActions()
 
     def redo_triggered(self):
         log.debug("redo")
-        self.currentFlowgraph.undoStack.redo()
+        self.currentGUIFlowgraph.undoStack.redo()
         self.updateActions()
 
     def view_undo_stack_triggered(self):
         log.debug("view_undo_stack")
-        self.undoView = QtWidgets.QUndoView(self.currentFlowgraph.undoStack)
+        self.undoView = QtWidgets.QUndoView(self.currentGUIFlowgraph.undoStack)
         self.undoView.setWindowTitle("Undo stack")
         self.undoView.show()
 
     def cut_triggered(self):
         log.debug("cut")
         self.copy_triggered()
-        self.currentFlowgraph.delete_selected()
+        self.currentGUIFlowgraph.delete_selected()
         self.updateActions()
 
     def copy_triggered(self):
         log.debug("copy")
-        self.clipboard = self.currentFlowgraph.copy_to_clipboard()
+        self.clipboard = self.currentGUIFlowgraph.copy_to_clipboard()
         self.updateActions()
 
     def paste_triggered(self):
         log.debug("paste")
         if self.clipboard:
-            self.currentFlowgraph.paste_from_clipboard(self.clipboard)
-            self.currentFlowgraph.update()
+            self.currentGUIFlowgraph.paste_from_clipboard(self.clipboard)
+            self.currentGUIFlowgraph.update()
         else:
             log.debug("clipboard is empty")
 
     def delete_triggered(self):
         log.debug("delete")
-        action = DeleteElementAction(self.currentFlowgraph)
-        self.currentFlowgraph.undoStack.push(action)
+        action = DeleteElementAction(self.currentGUIFlowgraph)
+        self.currentGUIFlowgraph.undoStack.push(action)
         self.updateActions()
 
     def select_all_triggered(self):
         log.debug("select_all")
-        self.currentFlowgraph.select_all()
+        self.currentGUIFlowgraph.select_all()
         self.updateActions()
 
     def select_none_triggered(self):
         log.debug("select_none")
-        self.currentFlowgraph.clearSelection()
+        self.currentGUIFlowgraph.clearSelection()
         self.updateActions()
 
     def rotate_ccw_triggered(self):
         # Pass to Undo/Redo
         log.debug("rotate_ccw")
-        rotateCommand = RotateAction(self.currentFlowgraph, -90)
-        self.currentFlowgraph.undoStack.push(rotateCommand)
+        rotateCommand = RotateAction(self.currentGUIFlowgraph, -90)
+        self.currentGUIFlowgraph.undoStack.push(rotateCommand)
         self.updateActions()
 
     def rotate_cw_triggered(self):
         # Pass to Undo/Redo
         log.debug("rotate_cw")
-        rotateCommand = RotateAction(self.currentFlowgraph, 90)
-        self.currentFlowgraph.undoStack.push(rotateCommand)
+        rotateCommand = RotateAction(self.currentGUIFlowgraph, 90)
+        self.currentGUIFlowgraph.undoStack.push(rotateCommand)
         self.updateActions()
 
     def toggle_source_bus_triggered(self):
         log.debug("toggle_source_bus")
-        bussifyCommand = BussifyAction(self.currentFlowgraph, 'source')
-        self.currentFlowgraph.undoStack.push(bussifyCommand)
+        bussifyCommand = BussifyAction(self.currentGUIFlowgraph, 'source')
+        self.currentGUIFlowgraph.undoStack.push(bussifyCommand)
         self.updateActions()
 
     def toggle_sink_bus_triggered(self):
         log.debug("toggle_sink_bus")
-        bussifyCommand = BussifyAction(self.currentFlowgraph, 'sink')
-        self.currentFlowgraph.undoStack.push(bussifyCommand)
+        bussifyCommand = BussifyAction(self.currentGUIFlowgraph, 'sink')
+        self.currentGUIFlowgraph.undoStack.push(bussifyCommand)
         self.updateActions()
 
     def errors_triggered(self):
@@ -1166,73 +1169,73 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
     def properties_triggered(self):
         log.debug("properties")
-        if len(self.currentFlowgraph.selected_blocks()) != 1:
+        if len(self.currentGUIFlowgraph.selected_blocks()) != 1:
             log.warn("Opening Properties even though selected_blocks() != 1 ")
-        self.currentFlowgraph.selected_blocks()[0].open_properties()
+        self.currentGUIFlowgraph.selected_blocks()[0].open_properties()
 
     def enable_triggered(self):
         log.debug("enable")
         all_enabled = True
-        for block in self.currentFlowgraph.selected_blocks():
+        for block in self.currentGUIFlowgraph.selected_blocks():
             if not block.state == "enabled":
                 all_enabled = False
                 break
 
         if not all_enabled:
-            cmd = EnableAction(self.currentFlowgraph)
-            self.currentFlowgraph.undoStack.push(cmd)
+            cmd = EnableAction(self.currentGUIFlowgraph)
+            self.currentGUIFlowgraph.undoStack.push(cmd)
 
-        self.currentFlowgraph.update()
+        self.currentGUIFlowgraph.update()
         self.updateActions()
 
     def disable_triggered(self):
         log.debug("disable")
         all_disabled = True
-        for block in self.currentFlowgraph.selected_blocks():
+        for block in self.currentGUIFlowgraph.selected_blocks():
             if not block.state == "disabled":
                 all_disabled = False
                 break
 
         if not all_disabled:
-            cmd = DisableAction(self.currentFlowgraph)
-            self.currentFlowgraph.undoStack.push(cmd)
+            cmd = DisableAction(self.currentGUIFlowgraph)
+            self.currentGUIFlowgraph.undoStack.push(cmd)
 
-        self.currentFlowgraph.update()
+        self.currentGUIFlowgraph.update()
         self.updateActions()
 
     def bypass_triggered(self):
         log.debug("bypass")
         all_bypassed = True
-        for block in self.currentFlowgraph.selected_blocks():
+        for block in self.currentGUIFlowgraph.selected_blocks():
             if not block.state == "bypassed":
                 all_bypassed = False
                 break
 
         if not all_bypassed:
-            cmd = BypassAction(self.currentFlowgraph)
-            self.currentFlowgraph.undoStack.push(cmd)
+            cmd = BypassAction(self.currentGUIFlowgraph)
+            self.currentGUIFlowgraph.undoStack.push(cmd)
 
-        self.currentFlowgraph.update()
+        self.currentGUIFlowgraph.update()
         self.updateActions()
 
     def generate_triggered(self):
         log.debug("generate")
-        if not self.currentFlowgraph.saved:
+        if not self.currentGUIFlowgraph.saved:
             self.save_triggered()
-        if not self.currentFlowgraph.saved:  # The line above was cancelled
+        if not self.currentGUIFlowgraph.saved:  # The line above was cancelled
             log.error("Cannot generate a flowgraph without saving first")
             return
 
-        filename = self.currentFlowgraph.filename
+        filename = self.currentGUIFlowgraph.filename
         generator = self.platform.Generator(
-            self.currentFlowgraph, os.path.dirname(filename)
+            self.currentGUIFlowgraph, os.path.dirname(filename)
         )
         generator.write()
         log.info(f"Generated {filename}")
 
     def execute_triggered(self):
         log.debug("execute")
-        filename = self.currentFlowgraph.filename
+        filename = self.currentGUIFlowgraph.filename
         py_path = filename[:-3] + "py"
         subprocess.Popen(f"/usr/bin/python {py_path}", shell=True)
 
@@ -1330,7 +1333,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         prefs_dialog = PreferencesDialog(self.app.qsettings)
         if prefs_dialog.exec_():
             prefs_dialog.save_all()
-            self.currentFlowgraph.update()
+            self.currentGUIFlowgraph.update()
 
     def example_browser_triggered(self, filter=None):
         log.debug("example-browser")
@@ -1360,7 +1363,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
 
         self.app.qsettings.setValue('window/windowState', self.saveState())
         self.app.qsettings.setValue('window/geometry', self.saveGeometry())
-        file_path = self.currentFlowgraph.filename
+        file_path = self.currentGUIFlowgraph.filename
         if file_path:
             self.app.qsettings.setValue('window/current_file', file_path)
         else:
