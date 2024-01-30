@@ -155,7 +155,7 @@ class ExampleBrowser(QtWidgets.QDialog, base.Component):
 
     def find_examples(self, progress_callback, ext="grc"):
         examples = []
-        with Cache(Constants.EXAMPLE_CACHE_FILE, log=False) as cache:
+        with Cache(Constants.EXAMPLE_CACHE_FILE) as cache:
             for entry in self.app.platform.config.example_paths:
                 if os.path.isdir(entry):
                     subdirs = 0
