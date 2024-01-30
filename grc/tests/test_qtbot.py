@@ -152,6 +152,22 @@ def menu_shortcut(qtbot, app, menu_name, menu_key, shortcut_key):
     qtbot.keyClick(menu, shortcut_key)
     qtbot.wait(100)
 
+# Start by closing the flowgraph that pops up on start
+def test_file_close_init(qtbot, qapp_cls_, monkeypatch):
+    win = qapp_cls_.MainWindow
+    monkeypatch.setattr(
+        QtWidgets.QMessageBox,
+        "question",
+        lambda *args: QtWidgets.QMessageBox.Discard,
+    )
+
+    qtbot.wait(100)
+
+
+    assert win.tabWidget.count() == 1
+    menu_shortcut(qtbot, qapp_cls_, "file", QtCore.Qt.Key_F, QtCore.Qt.Key_L)
+    assert win.tabWidget.count() == 1
+
 
 def test_add_null_sink(qtbot, qapp_cls_):
     qtbot.wait(100)
@@ -234,7 +250,7 @@ def test_change_id(qtbot, qapp_cls_):
     )
     qtbot.wait(100)
     qtbot.mouseDClick(
-        opts.props_dialog.edit_params[1],
+        opts.gui.props_dialog.edit_params[1],
         QtCore.Qt.LeftButton,
     )
     type_text(qtbot, qapp_cls_, "changed")
@@ -297,8 +313,8 @@ def test_move_blocks(qtbot, qapp_cls_):
     click_on(qtbot, qapp_cls_, variable)
     qtbot.wait(100)
 
-    start_throttle = scaling * global_pos(throttle, view)
-    start_variable = scaling * global_pos(variable, view)
+    start_throttle = scaling * global_pos(throttle.gui, view)
+    start_variable = scaling * global_pos(variable.gui, view)
     pag.moveTo(start_throttle.x(), start_throttle.y())
     pag.mouseDown()
 
@@ -311,9 +327,9 @@ def test_move_blocks(qtbot, qapp_cls_):
     while drag_t.is_alive():
         qtbot.wait(50)
     pag.mouseUp()
-    assert scaling * global_pos(throttle, view) != start_throttle
+    assert scaling * global_pos(throttle.gui, view) != start_throttle
     # Variable shouldn't move
-    assert scaling * global_pos(variable, view) == start_variable
+    assert scaling * global_pos(variable.gui, view) == start_variable
     delete_block(qtbot, qapp_cls_, throttle)
 
 
@@ -331,7 +347,7 @@ def test_connection(qtbot, qapp_cls_):
 
     assert len(fg.connections) == 0
 
-    start = scaling * global_pos(n_sink, view)
+    start = scaling * global_pos(n_sink.gui, view)
     pag.moveTo(start.x(), start.y())
     pag.mouseDown()
 
@@ -345,8 +361,8 @@ def test_connection(qtbot, qapp_cls_):
         qtbot.wait(50)
     pag.mouseUp()
 
-    click_on(qtbot, qapp_cls_, n_src.sources[0].gui)
-    click_on(qtbot, qapp_cls_, n_sink.sinks[0].gui)
+    click_on(qtbot, qapp_cls_, n_src.sources[0])
+    click_on(qtbot, qapp_cls_, n_sink.sinks[0])
     assert len(fg.connections) == 1
 
     undo(qtbot, qapp_cls_)
@@ -373,7 +389,7 @@ def test_num_inputs(qtbot, qapp_cls_):
 
     assert len(n_sink.sinks) == 1
 
-    start = scaling * global_pos(n_sink, view)
+    start = scaling * global_pos(n_sink.gui, view)
     pag.moveTo(start.x(), start.y())
     pag.mouseDown()
 
@@ -391,25 +407,25 @@ def test_num_inputs(qtbot, qapp_cls_):
     click_on(qtbot, qapp_cls_, n_sink.sinks[0])
     qtbot.wait(100)
 
-    click_pos = scaling * global_pos(n_sink, view)
+    click_pos = scaling * global_pos(n_sink.gui, view)
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
     qtbot.wait(100)
     param_index = 0
-    for i in range(len(n_sink.props_dialog.edit_params)):
-        if n_sink.props_dialog.edit_params[i].param.key == 'num_inputs':
+    for i in range(len(n_sink.gui.props_dialog.edit_params)):
+        if n_sink.gui.props_dialog.edit_params[i].param.key == 'num_inputs':
             param_index = i
 
-    qtbot.mouseDClick(n_sink.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
+    qtbot.mouseDClick(n_sink.gui.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
     type_text(qtbot, qapp_cls_, "2")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
     assert len(n_sink.sinks) == 2
     assert len(fg.connections) == 1
 
-    click_pos = scaling * global_pos(n_sink, view)
+    click_pos = scaling * global_pos(n_sink.gui, view)
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
     qtbot.wait(100)
-    qtbot.mouseDClick(n_sink.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
+    qtbot.mouseDClick(n_sink.gui.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
     type_text(qtbot, qapp_cls_, "1")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
@@ -442,11 +458,11 @@ def test_bus(qtbot, qapp_cls_):
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
     qtbot.wait(100)
     param_index = 0
-    for i in range(len(n_sink.props_dialog.edit_params)):
-        if n_sink.props_dialog.edit_params[i].param.key == 'num_inputs':
+    for i in range(len(n_sink.gui.props_dialog.edit_params)):
+        if n_sink.gui.props_dialog.edit_params[i].param.key == 'num_inputs':
             param_index = i
 
-    qtbot.mouseDClick(n_sink.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
+    qtbot.mouseDClick(n_sink.gui.props_dialog.edit_params[param_index], QtCore.Qt.LeftButton)
     type_text(qtbot, qapp_cls_, "2")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
@@ -770,7 +786,7 @@ def test_generate(qtbot, qapp_cls_, monkeypatch, tmp_path):
 
     assert len(fg.connections) == 0
 
-    start = scaling * global_pos(n_sink, view)
+    start = scaling * global_pos(n_sink.gui, view)
     pag.moveTo(start.x(), start.y())
     pag.mouseDown()
 

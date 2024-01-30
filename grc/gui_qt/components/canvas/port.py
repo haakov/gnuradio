@@ -32,6 +32,10 @@ class Port(CorePort):
         #CorePort.__init__(self, parent, direction, **n)
         self.gui = GUIPort(self, direction)
 
+    def remove_clone(self, port):
+        self.gui.scene().removeItem(port.gui)
+        super(self.__class__, self).remove_clone(port)
+
 
 class GUIPort(QtWidgets.QGraphicsItem):
     """The graphical port."""
@@ -68,12 +72,8 @@ class GUIPort(QtWidgets.QGraphicsItem):
         else:
             self.connection_point = self.scenePos() + QtCore.QPointF(self.width, self.height / 2.0)
         for conn in self.core.connections():
-            conn.updateLine()
+            conn.gui.updateLine()
         return QtWidgets.QGraphicsLineItem.itemChange(self, change, value)
-
-    def remove_clone(self, port):
-        self.core.parent_flowgraph.removeItem(port)
-        CorePort.remove_clone(self, port)
 
     def create_shapes(self):
         """Create new areas and labels for the port."""
@@ -86,7 +86,7 @@ class GUIPort(QtWidgets.QGraphicsItem):
 
     def create_shapes_and_labels(self):
         if not self.parentItem():
-            self.setParentItem(self.parent_block)
+            self.setParentItem(self.core.parent_block.gui)
         self.create_shapes()
         self._update_colors()
         self.auto_hide_port_labels = self.core.parent.parent.gui.app.qsettings.value('grc/auto_hide_port_labels', type=bool)

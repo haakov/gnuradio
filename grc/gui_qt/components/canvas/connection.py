@@ -66,17 +66,13 @@ class ConnectionArrow(QtWidgets.QGraphicsPathItem):
 
 class Connection(CoreConnection):
     def __init__(self, parent, source, sink):
-        CoreConnection.__init__(self, parent, source, sink)
-
-        self.gui = GUIConnection(self, source, sink)
-
-        self.source = source
-        self.sink = sink
+        super(Connection, self).__init__(parent, source, sink)
 
 class GUIConnection(QtWidgets.QGraphicsPathItem):
-    def __init__(self, core, source, sink):
-        self.core = core
-        QtWidgets.QGraphicsItem.__init__(self)
+    def __init__(self, parent, source, sink):
+        self.core = parent.core.connect(source.core, sink.core)
+        self.core.gui = self
+        super(GUIConnection, self).__init__()
 
         self.source = source
         self.sink = sink
@@ -121,9 +117,9 @@ class GUIConnection(QtWidgets.QGraphicsPathItem):
 
         if self.isSelected():
             pen = QtGui.QPen(colors.HIGHLIGHT_COLOR)
-        elif not self.enabled:
+        elif not self.core.enabled:
             pen = QtGui.QPen(colors.CONNECTION_DISABLED_COLOR)
-        elif not self.is_valid():
+        elif not self.core.is_valid():
             pen = QtGui.QPen(colors.CONNECTION_ERROR_COLOR)
         else:
             pen = QtGui.QPen(QtGui.QColor(0x61, 0x61, 0x61))
@@ -134,9 +130,9 @@ class GUIConnection(QtWidgets.QGraphicsPathItem):
 
         if self.isSelected():
             painter.setBrush(colors.HIGHLIGHT_COLOR)
-        elif not self.enabled:
+        elif not self.core.enabled:
             painter.setBrush(colors.CONNECTION_DISABLED_COLOR)
-        elif not self.is_valid():
+        elif not self.core.is_valid():
             painter.setBrush(colors.CONNECTION_ERROR_COLOR)
         else:
             painter.setBrush(QtGui.QColor(0x61, 0x61, 0x61))

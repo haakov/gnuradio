@@ -12,7 +12,7 @@ from qtpy.QtCore import Qt
 # Custom modules
 from .canvas.block import Block
 from .. import base
-from .flowgraph import Flowgraph
+from .canvas.flowgraph import FlowgraphScene, Flowgraph
 
 # Logging
 log = logging.getLogger(__name__)
@@ -24,13 +24,12 @@ DEFAULT_MAX_Y = 300
 class FlowgraphView(
     QtWidgets.QGraphicsView, base.Component
 ):  # added base.Component so it can see platform
-    def __init__(self, parent, filename=None):
+    def __init__(self, parent, platform, filename=None):
         super(FlowgraphView, self).__init__()
         self.setParent(parent)
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
 
-        self.flowgraph = Flowgraph(self)
-        self.GUIFlowgraph = self.flowgraph.gui
+        self.setScene(FlowgraphScene(self, platform))
 
         self.scalefactor = 0.8
         self.scale(self.scalefactor, self.scalefactor)
@@ -41,8 +40,7 @@ class FlowgraphView(
         else:
             self.initEmpty()
 
-        self.setScene(self.flowgraph.gui)
-        self.fitInView(self.flowgraph.gui.sceneRect(), QtCore.Qt.KeepAspectRatio)
+        self.fitInView(self.scene().sceneRect(), QtCore.Qt.KeepAspectRatio)
         if self.app.qsettings.value("appearance/theme", "dark") == "dark":
             self.setBackgroundBrush(QtGui.QBrush(QtGui.QColor(25, 35, 45)))
         else:

@@ -29,7 +29,7 @@ class Block(CoreBlock):
 
     def __init__(self, parent, **n):
         # super(self.__class__, self).__init__(parent, **n)
-        CoreBlock.__init__(self, parent)
+        super(self.__class__, self).__init__(parent)
 
         self.width = 300  # default shouldnt matter, it will change immedaitely after the first paint
         # self.block_key = block_key
@@ -41,12 +41,37 @@ class Block(CoreBlock):
 
         self.gui = GUIBlock(self, parent)
 
+    def import_data(self, name, states, parameters, **_):
+        super(self.__class__, self).import_data(name, states, parameters, **_)
+        self.states["coordinate"] = QtCore.QPointF(
+            states["coordinate"][0], states["coordinate"][1]
+        )
+        self.gui.setPos(self.states["coordinate"])
+        self.rewrite()
+        self.gui.create_shapes_and_labels()
+
+    def update_bus_logic(self):
+        ###############################
+        # Bus Logic
+        ###############################
+        for direc in {'source', 'sink'}:
+            if direc == 'source':
+                ports = self.sources
+                ports_gui = self.filter_bus_port(self.sources)
+            else:
+                ports = self.sinks
+                ports_gui = self.filter_bus_port(self.sinks)
+            if 'bus' in map(lambda a: a.dtype, ports):
+                for port in ports_gui:
+                    self.parent_flowgraph.gui.removeItem(port.gui)
+        super(self.__class__, self).update_bus_logic()
+
 
 class GUIBlock(QtWidgets.QGraphicsItem):
     def __init__(self, core, parent, **n):
+        super(GUIBlock, self).__init__()
         self.core = core
-        self.parent = core.parent.gui
-        QtWidgets.QGraphicsItem.__init__(self)
+        self.parent = self.scene()
 
         for sink in self.core.sinks:
             sink.gui.setParentItem(self)
@@ -74,14 +99,14 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         self.setFlag(QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
 
     def create_shapes_and_labels(self):
-        self.force_show_id = self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
-        self.hide_variables = self.parent.app.qsettings.value('grc/hide_variables', type=bool)
-        self.hide_disabled_blocks = self.parent.app.qsettings.value('grc/hide_disabled_blocks', type=bool)
-        self.snap_to_grid = self.parent.app.qsettings.value('grc/snap_to_grid', type=bool)
-        self.show_complexity = self.parent.app.qsettings.value('grc/show_complexity', type=bool)
-        self.show_block_comments = self.parent.app.qsettings.value('grc/show_block_comments', type=bool)
-        self.show_param_expr = self.parent.app.qsettings.value('grc/show_param_expr', type=bool)
-        self.show_param_val = self.parent.app.qsettings.value('grc/show_param_val', type=bool)
+        self.force_show_id = False #self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
+        self.hide_variables = False#self.parent.app.qsettings.value('grc/hide_variables', type=bool)
+        self.hide_disabled_blocks = False#self.parent.app.qsettings.value('grc/hide_disabled_blocks', type=bool)
+        self.snap_to_grid = False#self.parent.app.qsettings.value('grc/snap_to_grid', type=bool)
+        self.show_complexity = False#self.parent.app.qsettings.value('grc/show_complexity', type=bool)
+        self.show_block_comments = False#self.parent.app.qsettings.value('grc/show_block_comments', type=bool)
+        self.show_param_expr = False#self.parent.app.qsettings.value('grc/show_param_expr', type=bool)
+        self.show_param_val = False#self.parent.app.qsettings.value('grc/show_param_val', type=bool)
         self.prepareGeometryChange()
         font = QtGui.QFont("Helvetica", 10)
         font.setBold(True)
@@ -151,7 +176,7 @@ class GUIBlock(QtWidgets.QGraphicsItem):
             port_separation = (
                 Constants.PORT_SEPARATION
                 if not has_busses
-                else ports[0].height + Constants.PORT_SPACING
+                else ports[0].gui.height + Constants.PORT_SPACING
             )
             offset = (
                 self.height - (len(ports) - 1) * port_separation - ports[0].gui.height
@@ -174,7 +199,7 @@ class GUIBlock(QtWidgets.QGraphicsItem):
                 offset += (
                     Constants.PORT_SEPARATION
                     if not has_busses
-                    else port.height + Constants.PORT_SPACING
+                    else port.gui.height + Constants.PORT_SPACING
                 )
 
         self._update_colors()
@@ -339,10 +364,10 @@ class GUIBlock(QtWidgets.QGraphicsItem):
 
     def setStates(self, states):
         for k, v in states.items():
-            self.states[k] = v
+            self.core.states[k] = v
 
-        self.setPos(self.states["coordinate"][0], self.states["coordinate"][1])
-        self.setRotation(self.states["rotation"])
+        self.setPos(self.core.states["coordinate"][0], self.core.states["coordinate"][1])
+        self.setRotation(self.core.states["rotation"])
 
     def mouseReleaseEvent(self, e):
         super(self.__class__, self).mouseReleaseEvent(e)
@@ -377,22 +402,13 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         else:
             return QtWidgets.QGraphicsItem.itemChange(self, change, value)
 
-    def import_data(self, name, states, parameters, **_):
-        CoreBlock.import_data(self, name, states, parameters, **_)
-        self.states["coordinate"] = QtCore.QPointF(
-            states["coordinate"][0], states["coordinate"][1]
-        )
-        self.setPos(self.states["coordinate"])
-        self.rewrite()
-        self.create_shapes_and_labels()
-
     def rotate(self, rotation):
         log.debug(f"Rotating {self.name}")
         self.setRotation(self.rotation() + rotation)
 
     def moveToTop(self):
         # TODO: Is there a simpler way to do this?
-        self.setZValue(self.parent.getMaxZValue() + 1)
+        self.setZValue(self.scene().getMaxZValue() + 1)
 
     def center(self):
         return QtCore.QPointF(self.x() + self.width / 2, self.y() + self.height / 2)
@@ -401,19 +417,3 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         self.props_dialog = PropsDialog(self.core, self.force_show_id)
         self.props_dialog.show()
 
-    def update_bus_logic(self):
-        ###############################
-        # Bus Logic
-        ###############################
-        for direc in {'source', 'sink'}:
-            if direc == 'source':
-                ports = self.sources
-                ports_gui = self.filter_bus_port(self.sources)
-            else:
-                ports = self.sinks
-                ports_gui = self.filter_bus_port(self.sinks)
-            if 'bus' in map(lambda a: a.dtype, ports):
-                for port in ports_gui:
-                    self.parent_flowgraph.removeItem(port)
-        #super(Block, self).update_bus_logic()
-        super(self.__class__, self).update_bus_logic()

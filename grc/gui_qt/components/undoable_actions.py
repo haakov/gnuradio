@@ -3,6 +3,8 @@ from qtpy.QtWidgets import QUndoCommand
 import logging
 from copy import copy
 
+from .canvas.flowgraph import FlowgraphScene
+
 log = logging.getLogger(__name__)
 
 
@@ -10,44 +12,44 @@ log = logging.getLogger(__name__)
 # change params, toggle type.
 # Basically anything that's not cut/paste or new/delete
 class ChangeStateAction(QUndoCommand):
-    def __init__(self, g_flowgraph):
+    def __init__(self, scene: FlowgraphScene):
         QUndoCommand.__init__(self)
         log.debug("init ChangeState")
         self.oldStates = []
         self.oldParams = []
         self.newStates = []
         self.newParams = []
-        self.g_flowgraph = g_flowgraph
-        self.blocks = g_flowgraph.selected_blocks()
-        for block in self.blocks:
-            self.oldStates.append(copy(block.states))
-            self.newStates.append(copy(block.states))
-            self.oldParams.append(copy(block.params))
-            self.newParams.append(copy(block.params))
+        self.scene = scene
+        self.g_blocks = scene.selected_blocks()
+        for g_block in self.g_blocks:
+            self.oldStates.append(copy(g_block.core.states))
+            self.newStates.append(copy(g_block.core.states))
+            self.oldParams.append(copy(g_block.core.params))
+            self.newParams.append(copy(g_block.core.params))
 
     def redo(self):
-        for i in range(len(self.blocks)):
-            self.blocks[i].setStates(self.newStates[i])
-            self.blocks[i].params = (self.newParams[i])
-        self.flowgraph.update()
+        for i in range(len(self.g_blocks)):
+            self.g_blocks[i].setStates(self.newStates[i])
+            self.g_blocks[i].core.params = (self.newParams[i])
+        self.scene.update()
 
     def undo(self):
-        for i in range(len(self.blocks)):
+        for i in range(len(self.g_blocks)):
             self.blocks[i].setStates(self.oldStates[i])
             self.blocks[i].params = (self.oldParams[i])
-        self.flowgraph.update()
+        self.scene.update()
 
 
 class RotateAction(ChangeStateAction):
-    def __init__(self, flowgraph, delta_angle):
-        ChangeStateAction.__init__(self, flowgraph)
+    def __init__(self, scene, delta_angle):
+        ChangeStateAction.__init__(self, scene)
         log.debug("init RotateAction")
         self.setText('Rotate')
         for states in self.newStates:
             states['rotation'] += delta_angle
             # Get rid of superfluous entries
             states = dict((k, v) for k, v in states.items() if all(k == 'rotation' for x in k))
-        self.flowgraph.update()
+        self.scene.update()
 
 
 class MoveAction(QUndoCommand):
@@ -79,29 +81,29 @@ class MoveAction(QUndoCommand):
 
 
 class EnableAction(ChangeStateAction):
-    def __init__(self, flowgraph):
-        ChangeStateAction.__init__(self, flowgraph)
+    def __init__(self, scene: FlowgraphScene):
+        ChangeStateAction.__init__(self, scene)
         log.debug("init EnableAction")
         self.setText('Enable')
-        for i in range(len(self.blocks)):
+        for i in range(len(self.g_blocks)):
             self.newStates[i]['state'] = 'enabled'
 
 
 class DisableAction(ChangeStateAction):
-    def __init__(self, flowgraph):
-        ChangeStateAction.__init__(self, flowgraph)
+    def __init__(self, scene: FlowgraphScene):
+        ChangeStateAction.__init__(self, scene)
         log.debug("init DisableAction")
         self.setText('Disable')
-        for i in range(len(self.blocks)):
+        for i in range(len(self.g_blocks)):
             self.newStates[i]['state'] = 'disabled'
 
 
 class BypassAction(ChangeStateAction):
-    def __init__(self, flowgraph):
-        ChangeStateAction.__init__(self, flowgraph)
+    def __init__(self, scene: FlowgraphScene):
+        ChangeStateAction.__init__(self, scene)
         log.debug("init BypassAction")
         self.setText('Bypass')
-        for i in range(len(self.blocks)):
+        for i in range(len(self.g_blocks)):
             self.newStates[i]['state'] = 'bypassed'
 
 
@@ -147,18 +149,18 @@ class BlockPropsChangeAction(QUndoCommand):
 
 
 class BussifyAction(QUndoCommand):
-    def __init__(self, flowgraph, direction):
+    def __init__(self, scene, direction):
         QUndoCommand.__init__(self)
         log.debug("init BussifyAction")
         self.setText(f'Toggle bus {direction}')
-        self.flowgraph = flowgraph
+        self.scene = scene
         self.direction = direction
-        self.blocks = flowgraph.selected_blocks()
+        self.g_blocks = scene.selected_blocks()
 
     def bussify(self):
-        for block in self.blocks:
-            block.bussify(self.direction)
-        self.flowgraph.update()
+        for block in self.g_blocks:
+            block.core.bussify(self.direction)
+        self.scene.update()
 
     def redo(self):
         self.bussify()
@@ -169,11 +171,11 @@ class BussifyAction(QUndoCommand):
 
 # Blocks and connections
 class NewElementAction(QUndoCommand):
-    def __init__(self, flowgraph, element):
+    def __init__(self, scene, element):
         QUndoCommand.__init__(self)
         log.debug("init NewElementAction")
         self.setText('New')
-        self.flowgraph = flowgraph
+        self.scene = scene
         self.element = element
         self.first = True
 
@@ -181,35 +183,42 @@ class NewElementAction(QUndoCommand):
         if self.first:
             self.first = False
             return
-        self.flowgraph.add_element(self.element)
-        self.flowgraph.update()
+
+        if self.element.is_block:
+            self.scene.core.blocks.append(self.element)
+        elif self.element.is_connection:
+            self.scene.core.connections.add(self.element)
+
+        self.scene.addItem(self.element.gui)
+        self.scene.update()
 
     def undo(self):
-        self.flowgraph.remove_element(self.element)
-        self.flowgraph.update()
+        self.scene.remove_element(self.element.gui)
+        self.scene.update()
 
 
 class DeleteElementAction(QUndoCommand):
-    def __init__(self, g_flowgraph):
+    def __init__(self, scene):
         QUndoCommand.__init__(self)
         log.debug("init DeleteElementAction")
         self.setText('Delete')
-        self.g_flowgraph = g_flowgraph
-        self.connections = g_flowgraph.selected_connections()
-        self.blocks = g_flowgraph.selected_blocks()
-        for block in self.blocks:
-            self.connections = self.connections + block.core.connections()
+        self.scene = scene
+        self.g_connections = scene.selected_connections()
+        self.g_blocks = scene.selected_blocks()
+        for block in self.g_blocks:
+            for conn in block.core.connections():
+                self.g_connections = self.g_connections + [conn.gui]
 
     def redo(self):
-        for con in self.connections:
-            self.g_flowgraph.remove_element(con)
-        for block in self.blocks:
-            self.g_flowgraph.remove_element(block)
-        self.g_flowgraph.update()
+        for con in self.g_connections:
+            self.scene.remove_element(con)
+        for block in self.g_blocks:
+            self.scene.remove_element(block)
+        self.scene.update()
 
     def undo(self):
         for block in self.blocks:
-            self.g_flowgraph.add_element(block)
+            self.scene.add_element(block)
         for con in self.connections:
-            self.g_flowgraph.add_element(con)
-        self.g_flowgraph.update()
+            self.scene.add_element(con)
+        self.scene.update()
