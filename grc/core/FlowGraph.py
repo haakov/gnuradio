@@ -394,7 +394,6 @@ class FlowGraph(Element):
         elif element in self.connections:
             self.connections.remove(element)
 
-
     ##############################################
     # Import/Export Methods
     ##############################################
