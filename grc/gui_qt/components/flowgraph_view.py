@@ -121,12 +121,12 @@ class FlowgraphView(
             #     self.setTransformationAnchor(QtWidgets.QGraphicsView.NoAnchor)
             #     self.setResizeAnchor(QtWidgets.QGraphicsView.NoAnchor)
 
-            #     oldPos = self.mapToScene(event.pos())
+            #     old_pos = self.mapToScene(event.pos())
 
             #     self.scale(factor, factor)
-            #     newPos = self.mapToScene(event.pos())
+            #     new_pos = self.mapToScene(event.pos())
 
-            #     delta = newPos - oldPos
+            #     delta = new_pos - old_pos
             #     self.translate(delta.x(), delta.y())
 
         elif event.modifiers() == Qt.ShiftModifier:
@@ -143,9 +143,9 @@ class FlowgraphView(
 
     def mouseMoveEvent(self, event):
         if self.mousePressed and self.isPanning:
-            newPos = event.pos()
-            diff = newPos - self.dragPos
-            self.dragPos = newPos
+            new_pos = event.pos()
+            diff = new_pos - self.dragPos
+            self.dragPos = new_pos
             self.horizontalScrollBar().setValue(
                 self.horizontalScrollBar().value() - diff.x()
             )

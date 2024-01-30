@@ -1,8 +1,8 @@
 import logging
 
-# third-party modules
-from qtpy import QtGui, QtCore, QtWidgets
-from qtpy.QtCore import Qt, QUrl
+from qtpy.QtGui import QPen, QPainter, QBrush, QFont, QFontMetrics
+from qtpy.QtCore import Qt, QPointF, QRectF, QUrl
+from qtpy.QtWidgets import QGraphicsItem
 
 from . import colors
 from ... import Constants
@@ -20,6 +20,9 @@ LONG_VALUE = 20  # maximum length of a param string.
 
 
 class Block(CoreBlock):
+    """
+    A block. Accesses its graphical representation with self.gui.
+    """
     @classmethod
     def make_cls_with_base(cls, super_cls):
         name = super_cls.__name__
@@ -28,12 +31,9 @@ class Block(CoreBlock):
         return type(name, bases, namespace)
 
     def __init__(self, parent, **n):
-        # super(self.__class__, self).__init__(parent, **n)
         super(self.__class__, self).__init__(parent)
 
-        self.width = 300  # default shouldnt matter, it will change immedaitely after the first paint
-        # self.block_key = block_key
-        # self.block_label = block_label
+        self.width = 50  # will change immediately after the first paint
         self.block_label = self.key
 
         if "rotation" not in self.states.keys():
@@ -43,7 +43,7 @@ class Block(CoreBlock):
 
     def import_data(self, name, states, parameters, **_):
         super(self.__class__, self).import_data(name, states, parameters, **_)
-        self.states["coordinate"] = QtCore.QPointF(
+        self.states["coordinate"] = QPointF(
             states["coordinate"][0], states["coordinate"][1]
         )
         self.gui.setPos(self.states["coordinate"])
@@ -51,9 +51,6 @@ class Block(CoreBlock):
         self.gui.create_shapes_and_labels()
 
     def update_bus_logic(self):
-        ###############################
-        # Bus Logic
-        ###############################
         for direc in {'source', 'sink'}:
             if direc == 'source':
                 ports = self.sources
@@ -67,36 +64,36 @@ class Block(CoreBlock):
         super(self.__class__, self).update_bus_logic()
 
 
-class GUIBlock(QtWidgets.QGraphicsItem):
+class GUIBlock(QGraphicsItem):
+    """
+    The graphical representation of a block. Accesses the actual block with self.core.
+    """
     def __init__(self, core, parent, **n):
         super(GUIBlock, self).__init__()
         self.core = core
         self.parent = self.scene()
+        self.font = QFont("Helvetica", 10)
 
-        for sink in self.core.sinks:
-            sink.gui.setParentItem(self)
-        for source in self.core.sources:
-            source.gui.setParentItem(self)
         self.create_shapes_and_labels()
 
         if "coordinate" not in self.core.states.keys():
             self.core.states["coordinate"] = (500, 300)
             self.setPos(
-                QtCore.QPointF(
+                QPointF(
                     self.core.states["coordinate"][0], self.core.states["coordinate"][1]
                 )
             )
 
-        self.moving = False
-        self.oldPos = (self.x(), self.y())
-        self.newPos = (self.x(), self.y())
+        self.old_pos = (self.x(), self.y())
+        self.new_pos = (self.x(), self.y())
         self.core.states["coordinate"] = (self.x(), self.y())
-        self.oldData = None
+        self.moving = False
+        self.old_data = None
         self.props_dialog = None
 
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsMovable)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemIsSelectable)
-        self.setFlag(QtWidgets.QGraphicsItem.ItemSendsScenePositionChanges)
+        self.setFlag(QGraphicsItem.ItemIsMovable)
+        self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
 
     def create_shapes_and_labels(self):
         self.force_show_id = False #self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
@@ -108,12 +105,12 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         self.show_param_expr = False#self.parent.app.qsettings.value('grc/show_param_expr', type=bool)
         self.show_param_val = False#self.parent.app.qsettings.value('grc/show_param_val', type=bool)
         self.prepareGeometryChange()
-        font = QtGui.QFont("Helvetica", 10)
-        font.setBold(True)
+        self.font.setBold(True)
 
         # figure out height of block based on how many params there are
         i = 30
 
+        # Check if we need to increase the height to fit all the ports
         for key, item in self.core.params.items():
             value = item.value
             if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
@@ -147,8 +144,9 @@ class GUIBlock(QtWidgets.QGraphicsItem):
             get_min_height_for_ports(self.core.active_sinks),
             get_min_height_for_ports(self.core.active_sources),
         )
-        # figure out width of block based on widest line of text
-        fm = QtGui.QFontMetrics(font)
+
+        # Figure out width of block based on widest line of text
+        fm = QFontMetrics(self.font)
         largest_width = fm.width(self.core.label)
         for key, item in self.core.params.items():
             name = item.name
@@ -164,6 +162,7 @@ class GUIBlock(QtWidgets.QGraphicsItem):
                     largest_width = fm.width(full_line)
         self.width = largest_width + 15
 
+        # Update the position and size of all the ports
         bussified = (
             self.core.current_bus_structure["source"],
             self.core.current_bus_structure["sink"],
@@ -187,14 +186,6 @@ class GUIBlock(QtWidgets.QGraphicsItem):
                 else:
                     port.gui.setPos(self.width, offset)
                 port.gui.create_shapes_and_labels()
-                """
-                port.coordinate = {
-                    0: (+self.width, offset),
-                    90: (offset, -port.width),
-                    180: (-port.width, offset),
-                    270: (offset, +self.width),
-                }[port.connector_direction]
-                """
 
                 offset += (
                     Constants.PORT_SEPARATION
@@ -210,9 +201,6 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         for ports in (self.core.active_sinks, self.core.active_sources):
             for port in ports:
                 port.gui.create_shapes_and_labels()
-                # max_width = max(max_width, port.width_with_label)
-            # for port in ports:
-            #    port.width = max_width
 
     def _update_colors(self):
         def get_bg():
@@ -235,6 +223,8 @@ class GUIBlock(QtWidgets.QGraphicsItem):
             """
             Get the border color for this block
             """
+            if self.isSelected():
+                return colors.HIGHLIGHT_COLOR
             if self.core.is_dummy_block:
                 return colors.MISSING_BLOCK_BORDER_COLOR
             if self.core.deprecated:
@@ -244,47 +234,38 @@ class GUIBlock(QtWidgets.QGraphicsItem):
             return colors.BORDER_COLOR_DISABLED
 
         self._bg_color = get_bg()
-        # self._font_color[-1] = 1.0 if self.state == 'enabled' else 0.4
         self._border_color = get_border()
 
     def paint(self, painter, option, widget):
         if (self.hide_variables and (self.is_variable or self.is_import)) or (self.hide_disabled_blocks and not self.enabled):
             return
-        self.core.states["coordinate"] = (self.x(), self.y())
-        # Set font
-        font = QtGui.QFont("Helvetica", 10)
-        # font.setStretch(70) # makes it more condensed
-        font.setBold(True)
 
-        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        self.core.states["coordinate"] = (self.x(), self.y()) # TODO: Remove
+        painter.setRenderHint(QPainter.Antialiasing)
+        self.font.setBold(True)
 
-        # Draw main rectangle
-        pen = QtGui.QPen(1)
-        if self.isSelected():
-            pen = QtGui.QPen(colors.HIGHLIGHT_COLOR)
-        else:
-            pen = QtGui.QPen(self._border_color)
+        pen = QPen(1)
+        pen = QPen(self._border_color)
 
         pen.setWidth(3)
         painter.setPen(pen)
+        painter.setBrush(QBrush(self._bg_color))
+        rect = QRectF(0, 0, self.width, self.height)
 
-        painter.setBrush(QtGui.QBrush(self._bg_color))
-
-        rect = QtCore.QRectF(0, 0, self.width, self.height)
         painter.drawRect(rect)
-        painter.setPen(QtGui.QPen(1))
+        painter.setPen(QPen(1))
 
         # Draw block label text
-        painter.setFont(font)
+        painter.setFont(self.font)
         if self.core.is_valid():
             painter.setPen(Qt.black)
         else:
             painter.setPen(Qt.red)
         painter.drawText(
-            QtCore.QRectF(0, 0 - self.height / 2 + 15, self.width, self.height),
+            QRectF(0, 0 - self.height / 2 + 15, self.width, self.height),
             Qt.AlignCenter,
             self.core.label,
-        )  # NOTE the 3rd/4th arg in  QRectF seems to set the bounding box of the text, so if there is ever any clipping, thats why
+        )
 
         # Draw param text
         y_offset = 30  # params start 30 down from the top of the box
@@ -314,22 +295,22 @@ class GUIBlock(QtWidgets.QGraphicsItem):
             value_label = display_value
             if (value is not None and item.hide == "none") or (item.dtype == 'id' and self.force_show_id):
                 if item.is_valid():
-                    painter.setPen(QtGui.QPen(1))
+                    painter.setPen(QPen(1))
                 else:
                     painter.setPen(Qt.red)
 
-                font.setBold(True)
-                painter.setFont(font)
+                self.font.setBold(True)
+                painter.setFont(self.font)
                 painter.drawText(
-                    QtCore.QRectF(7.5, 0 + y_offset, self.width, self.height),
+                    QRectF(7.5, 0 + y_offset, self.width, self.height),
                     Qt.AlignLeft,
                     name + ": ",
                 )
-                fm = QtGui.QFontMetrics(font)
-                font.setBold(False)
-                painter.setFont(font)
+                fm = QFontMetrics(self.font)
+                self.font.setBold(False)
+                painter.setFont(self.font)
                 painter.drawText(
-                    QtCore.QRectF(
+                    QRectF(
                         7.5 + fm.width(name + ": "),
                         0 + y_offset,
                         self.width,
@@ -352,15 +333,15 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         if markups:  # TODO: Calculate comment box size
             painter.setPen(Qt.gray)
             painter.drawText(
-                QtCore.QRectF(0, self.height + 5, self.width, self.height),
+                QRectF(0, self.height + 5, self.width, self.height),
                 Qt.AlignLeft,
                 "\n".join(markups),
             )
 
-    def boundingRect(self):  # required to have
-        return QtCore.QRectF(  # TODO: Calculate comment box size
+    def boundingRect(self):
+        return QRectF(  # TODO: Calculate comment box size properly
             -2.5, -2.5, self.width + 5, self.height + (5 if not self.core.comment else 50)
-        )  # margin to avoid artifacts
+        )
 
     def setStates(self, states):
         for k, v in states.items():
@@ -368,9 +349,6 @@ class GUIBlock(QtWidgets.QGraphicsItem):
 
         self.setPos(self.core.states["coordinate"][0], self.core.states["coordinate"][1])
         self.setRotation(self.core.states["rotation"])
-
-    def mouseReleaseEvent(self, e):
-        super(self.__class__, self).mouseReleaseEvent(e)
 
     def mousePressEvent(self, e):
         super(self.__class__, self).mousePressEvent(e)
@@ -394,13 +372,13 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         super(self.__class__, self).mouseDoubleClickEvent(e)
 
     def itemChange(self, change, value):
-        if change == QtWidgets.QGraphicsItem.ItemPositionChange and self.scene() and self.snap_to_grid:
+        if change == QGraphicsItem.ItemPositionChange and self.scene() and self.snap_to_grid:
             grid_size = 10
             value.setX(round(value.x() / grid_size) * grid_size)
             value.setY(round(value.y() / grid_size) * grid_size)
             return value
         else:
-            return QtWidgets.QGraphicsItem.itemChange(self, change, value)
+            return QGraphicsItem.itemChange(self, change, value)
 
     def rotate(self, rotation):
         log.debug(f"Rotating {self.name}")
@@ -411,7 +389,7 @@ class GUIBlock(QtWidgets.QGraphicsItem):
         self.setZValue(self.scene().getMaxZValue() + 1)
 
     def center(self):
-        return QtCore.QPointF(self.x() + self.width / 2, self.y() + self.height / 2)
+        return QPointF(self.x() + self.width / 2, self.y() + self.height / 2)
 
     def open_properties(self):
         self.props_dialog = PropsDialog(self.core, self.force_show_id)

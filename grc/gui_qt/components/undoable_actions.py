@@ -116,7 +116,7 @@ class BlockPropsChangeAction(QUndoCommand):
         self.setText(f'{block.name} block: Change properties')
         self.flowgraph = flowgraph
         self.block = block
-        self.oldData = copy(block.oldData)
+        self.old_data = copy(block.old_data)
         self.newData = copy(block.export_data())
         self.first = True
 
@@ -137,11 +137,11 @@ class BlockPropsChangeAction(QUndoCommand):
 
     def undo(self):
         try:
-            name = self.oldData['name']
+            name = self.old_data['name']
         except KeyError:
-            name = self.oldData['parameters']['id']
+            name = self.old_data['parameters']['id']
 
-        self.block.import_data(name, self.oldData['states'], self.oldData['parameters'])
+        self.block.import_data(name, self.old_data['states'], self.old_data['parameters'])
         self.block.rewrite()
         self.block.validate()
         self.block.create_shapes_and_labels()

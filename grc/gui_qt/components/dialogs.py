@@ -150,7 +150,7 @@ class PropsDialog(QtWidgets.QDialog):
 
     def accept(self):
         super().accept()
-        self._block.oldData = self._block.export_data()
+        self._block.old_data = self._block.export_data()
         for par in self.edit_params:
             if isinstance(par, QtWidgets.QLineEdit):
                 par.param.set_value(par.text())
