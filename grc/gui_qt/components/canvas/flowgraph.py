@@ -61,7 +61,7 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
         self.mousePressed = False
 
         self.dummy_arrow = None
-        self.startPort = None
+        self.start_port = None
         self._elements_to_draw = []
 
         if QT6:
@@ -289,7 +289,7 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
                     self.newElement.emit(new_con.core)
                     self.update()
                 else:
-                    self.startPort = g_item
+                    self.start_port = g_item
                     if c_item.is_source:
                         self.dummy_arrow = DummyConnection(self, g_item.connection_point, event.scenePos())
                         self.dummy_arrow.setPen(QtGui.QPen(1))
@@ -314,9 +314,9 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
         if self.dummy_arrow:  # We are currently dragging a DummyConnection
             g_item = self.itemAt(event.scenePos(), QtGui.QTransform())
             c_item = g_item.core if g_item else None
-            if c_item.is_port and g_item != self.startPort:
+            if c_item.is_port and g_item != self.start_port:
                 log.debug("Created connection (drag)")
-                new_con = GUIConnection(self, self.startPort, g_item)
+                new_con = GUIConnection(self, self.start_port, g_item)
                 self.newElement.emit(new_con.core)
                 self.update()
             self.removeItem(self.dummy_arrow)

@@ -2,7 +2,7 @@ import logging
 
 from qtpy.QtGui import QPen, QPainter, QBrush, QFont, QFontMetrics
 from qtpy.QtCore import Qt, QPointF, QRectF, QUrl
-from qtpy.QtWidgets import QGraphicsItem
+from qtpy.QtWidgets import QGraphicsItem, QApplication
 
 from . import colors
 from ... import Constants
@@ -43,10 +43,7 @@ class Block(CoreBlock):
 
     def import_data(self, name, states, parameters, **_):
         super(self.__class__, self).import_data(name, states, parameters, **_)
-        self.states["coordinate"] = QPointF(
-            states["coordinate"][0], states["coordinate"][1]
-        )
-        self.gui.setPos(self.states["coordinate"])
+        self.gui.setPos(*self.states["coordinate"])
         self.rewrite()
         self.gui.create_shapes_and_labels()
 
@@ -78,15 +75,10 @@ class GUIBlock(QGraphicsItem):
 
         if "coordinate" not in self.core.states.keys():
             self.core.states["coordinate"] = (500, 300)
-            self.setPos(
-                QPointF(
-                    self.core.states["coordinate"][0], self.core.states["coordinate"][1]
-                )
-            )
+            self.setPos(*self.core.states["coordinate"])
 
         self.old_pos = (self.x(), self.y())
         self.new_pos = (self.x(), self.y())
-        self.core.states["coordinate"] = (self.x(), self.y())
         self.moving = False
         self.old_data = None
         self.props_dialog = None
@@ -96,14 +88,15 @@ class GUIBlock(QGraphicsItem):
         self.setFlag(QGraphicsItem.ItemSendsScenePositionChanges)
 
     def create_shapes_and_labels(self):
-        self.force_show_id = False #self.parent.app.qsettings.value('grc/show_block_ids', type=bool)
-        self.hide_variables = False#self.parent.app.qsettings.value('grc/hide_variables', type=bool)
-        self.hide_disabled_blocks = False#self.parent.app.qsettings.value('grc/hide_disabled_blocks', type=bool)
-        self.snap_to_grid = False#self.parent.app.qsettings.value('grc/snap_to_grid', type=bool)
-        self.show_complexity = False#self.parent.app.qsettings.value('grc/show_complexity', type=bool)
-        self.show_block_comments = False#self.parent.app.qsettings.value('grc/show_block_comments', type=bool)
-        self.show_param_expr = False#self.parent.app.qsettings.value('grc/show_param_expr', type=bool)
-        self.show_param_val = False#self.parent.app.qsettings.value('grc/show_param_val', type=bool)
+        qsettings = QApplication.instance().qsettings
+        self.force_show_id = qsettings.value('grc/show_block_ids', type=bool)
+        self.hide_variables = qsettings.value('grc/hide_variables', type=bool)
+        self.hide_disabled_blocks = qsettings.value('grc/hide_disabled_blocks', type=bool)
+        self.snap_to_grid = qsettings.value('grc/snap_to_grid', type=bool)
+        self.show_complexity = qsettings.value('grc/show_complexity', type=bool)
+        self.show_block_comments = qsettings.value('grc/show_block_comments', type=bool)
+        self.show_param_expr = qsettings.value('grc/show_param_expr', type=bool)
+        self.show_param_val = qsettings.value('grc/show_param_val', type=bool)
         self.prepareGeometryChange()
         self.font.setBold(True)
 
@@ -240,7 +233,6 @@ class GUIBlock(QGraphicsItem):
         if (self.hide_variables and (self.is_variable or self.is_import)) or (self.hide_disabled_blocks and not self.enabled):
             return
 
-        self.core.states["coordinate"] = (self.x(), self.y()) # TODO: Remove
         painter.setRenderHint(QPainter.Antialiasing)
         self.font.setBold(True)
 
@@ -347,14 +339,14 @@ class GUIBlock(QGraphicsItem):
         for k, v in states.items():
             self.core.states[k] = v
 
-        self.setPos(self.core.states["coordinate"][0], self.core.states["coordinate"][1])
+        self.setPos(*self.core.states["coordinate"])
         self.setRotation(self.core.states["rotation"])
 
     def mousePressEvent(self, e):
         super(self.__class__, self).mousePressEvent(e)
         log.debug(f"{self} clicked")
-        url_prefix = str(self.core.parent.gui.app.platform.config.wiki_block_docs_url_prefix)
-        self.core.parent.gui.app.WikiTab.setURL(QUrl(url_prefix + self.core.label.replace(" ", "_")))
+        url_prefix = str(self.core.parent_platform.config.wiki_block_docs_url_prefix)
+        QApplication.instance().WikiTab.setURL(QUrl(url_prefix + self.core.label.replace(" ", "_")))
 
         self.moveToTop()
 
@@ -394,4 +386,3 @@ class GUIBlock(QGraphicsItem):
     def open_properties(self):
         self.props_dialog = PropsDialog(self.core, self.force_show_id)
         self.props_dialog.show()
-

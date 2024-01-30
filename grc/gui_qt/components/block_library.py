@@ -74,7 +74,7 @@ class LibraryView(QtWidgets.QTreeView):
         label = self.model().data(self.currentIndex())
         if label in self.parent().parent()._block_tree_flat:
             prefix = str(
-                self.parent().parent().app.platform.config.wiki_block_docs_url_prefix
+                self.parent().parent().platform.config.wiki_block_docs_url_prefix
             )
             self.parent().parent().app.WikiTab.setURL(
                 QUrl(prefix + label.replace(" ", "_"))
@@ -215,7 +215,7 @@ class BlockLibrary(QtWidgets.QDockWidget, base.Component):
 
         log.info("Loading blocks")
         block_tree = {}
-        for block in six.itervalues(self.app.platform.blocks):
+        for block in six.itervalues(self.platform.blocks):
             if block.category:
                 # Blocks with None category should be left out for whatever reason (e.g. not installed)
                 # print(block.category) # in list form, e.g. ['Core', 'Digital Television', 'ATSC']

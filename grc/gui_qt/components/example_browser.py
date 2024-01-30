@@ -61,7 +61,7 @@ class ExampleBrowser(QtWidgets.QDialog, base.Component):
 
         self.setWindowTitle("GRC Examples")
 
-        self.examples = self.app.platform.examples
+        self.examples = self.platform.examples
         self.modules = []
         self.current_module = ""
 
@@ -156,7 +156,7 @@ class ExampleBrowser(QtWidgets.QDialog, base.Component):
     def find_examples(self, progress_callback, ext="grc"):
         examples = []
         with Cache(Constants.EXAMPLE_CACHE_FILE) as cache:
-            for entry in self.app.platform.config.example_paths:
+            for entry in self.platform.config.example_paths:
                 if os.path.isdir(entry):
                     subdirs = 0
                     current_subdir = 0
