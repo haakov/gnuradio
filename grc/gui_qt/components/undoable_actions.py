@@ -218,7 +218,7 @@ class DeleteElementAction(QUndoCommand):
 
     def undo(self):
         for block in self.blocks:
-            self.scene.add_element(block)
+            self.scene.core.blocks.append(block)
         for con in self.connections:
-            self.scene.add_element(con)
+            self.scene.core.connections(con)
         self.scene.update()
