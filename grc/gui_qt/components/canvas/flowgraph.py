@@ -27,7 +27,7 @@ from itertools import count
 
 # Custom modules
 from ....core.base import Element
-from .connection import ConnectionArrow, Connection, GUIConnection
+from .connection import DummyConnection, GUIConnection
 from ... import base
 from ....core.FlowGraph import FlowGraph as CoreFlowgraph
 from ... import Utils
@@ -60,7 +60,7 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
         self.isPanning = False
         self.mousePressed = False
 
-        self.newConnection = None
+        self.dummy_arrow = None
         self.startPort = None
         self._elements_to_draw = []
 
@@ -90,8 +90,6 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
         for block in self.core.blocks:
             block.gui.create_shapes_and_labels()
         self.update_elements_to_draw()
-        # self.create_labels()
-        # self.create_shapes()
 
     def update_elements_to_draw(self):
         # hide_disabled_blocks = Actions.TOGGLE_HIDE_DISABLED_BLOCKS.get_active()
@@ -204,14 +202,15 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
         # Tell the block where to show up on the canvas
         attrib = {"_coordinate": pos}
 
-        block = self.core.new_block(block_key, attrib=attrib)
-        block.states["coordinate"] = pos
-        block.gui.setPos(*pos)
-        block.params["id"].set_value(id)
-        self.addItem(block.gui)
-        block.gui.moveToTop()
+        c_block = self.core.new_block(block_key, attrib=attrib)
+        g_block = c_block.gui
+        c_block.states["coordinate"] = pos
+        g_block.setPos(*pos)
+        c_block.params["id"].set_value(id)
+        self.addItem(g_block)
+        g_block.moveToTop()
         self.update()
-        self.newElement.emit(block)
+        self.newElement.emit(c_block)
 
     def selected_blocks(self) -> list[GUIBlock]:
         blocks = []
@@ -292,54 +291,40 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
                 else:
                     self.startPort = g_item
                     if c_item.is_source:
-                        self.newConnection = ConnectionArrow(self, g_item.connection_point, event.scenePos())
-                        self.newConnection.setPen(QtGui.QPen(1))
-                        self.addItem(self.newConnection)
+                        self.dummy_arrow = DummyConnection(self, g_item.connection_point, event.scenePos())
+                        self.dummy_arrow.setPen(QtGui.QPen(1))
+                        self.addItem(self.dummy_arrow)
         if event.button() == Qt.LeftButton:
             self.mousePressed = True
             super(FlowgraphScene, self).mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
         self.view.setSceneRect(self.itemsBoundingRect())
-        if self.newConnection:
-            self.newConnection.end_point = event.scenePos()
-            self.newConnection.updateLine()
+        if self.dummy_arrow:
+            self.dummy_arrow.update(event.scenePos())
 
         if self.mousePressed and self.isPanning:
-            newPos = event.pos()
-            self.dragPos = newPos
+            new_pos = event.pos()
+            self.dragPos = new_pos
             event.accept()
         else:
-            itemUnderMouse = self.itemAt(
-                event.pos(), QtGui.QTransform()
-            )  # the 2nd arg lets you transform some items and ignore others
-            if itemUnderMouse is not None:
-                # ~ print itemUnderMouse
-                pass
-
             super(FlowgraphScene, self).mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
-        if self.newConnection:  # We are currently dragging a ConnectionArrow
+        if self.dummy_arrow:  # We are currently dragging a DummyConnection
             g_item = self.itemAt(event.scenePos(), QtGui.QTransform())
             c_item = g_item.core if g_item else None
             if c_item.is_port and g_item != self.startPort:
                 log.debug("Created connection (drag)")
                 new_con = GUIConnection(self, self.startPort, g_item)
-                self.newElement.emit(new_con)
+                self.newElement.emit(new_con.core)
                 self.update()
-            self.removeItem(self.newConnection)
-            self.newConnection = None
+            self.removeItem(self.dummy_arrow)
+            self.dummy_arrow = None
         else:
-            if self.clickPos != event.scenePos():
-                if self.moving_blocks:
-                    self.itemMoved.emit(event.scenePos() - self.clickPos)
+            if self.clickPos != event.scenePos() and self.moving_blocks:
+                self.itemMoved.emit(event.scenePos() - self.clickPos)
         super(FlowgraphScene, self).mouseReleaseEvent(event)
-
-    def mouseDoubleClickEvent(
-        self, event
-    ):  # Will be used to open up dialog box of a block
-        super(FlowgraphScene, self).mouseDoubleClickEvent(event)
 
     def createActions(self, actions):
         log.debug("Creating actions")
