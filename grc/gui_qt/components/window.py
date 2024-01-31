@@ -1341,13 +1341,13 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
             prefs_dialog.save_all()
             self.currentFlowgraphScene.update()
 
-    def example_browser_triggered(self, filter=None):
+    def example_browser_triggered(self, path_filter: list[str] = None):
         log.debug("example-browser")
         if self.examples_found:
             ex_dialog = self.ExampleBrowser
-            if isinstance(filter, list):
-                if len(filter):
-                    ex_dialog.filter(filter)
+            if isinstance(path_filter, list):
+                if len(path_filter):
+                    ex_dialog.filter_(path_filter)
                 else:  # filter is an empty list
                     ad = QtWidgets.QMessageBox()
                     ad.setWindowTitle("GRC: No examples")
