@@ -163,10 +163,20 @@ def test_file_close_init(qtbot, qapp_cls_, monkeypatch):
 
     qtbot.wait(100)
 
-
     assert win.tabWidget.count() == 1
     menu_shortcut(qtbot, qapp_cls_, "file", QtCore.Qt.Key_F, QtCore.Qt.Key_L)
     assert win.tabWidget.count() == 1
+
+def test_delete_block(qtbot, qapp_cls_):
+    qtbot.wait(100)
+    var = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "variable")
+    assert var is not None
+
+    delete_block(qtbot, qapp_cls_, var)
+    qtbot.wait(100)
+    assert len(qapp_cls_.MainWindow.currentFlowgraph.blocks) == 1
+    undo(qtbot, qapp_cls_)
+    assert len(qapp_cls_.MainWindow.currentFlowgraph.blocks) == 2
 
 
 def test_add_null_sink(qtbot, qapp_cls_):
@@ -258,6 +268,7 @@ def test_open_properties(qtbot, qapp_cls_):
 
 def test_change_id(qtbot, qapp_cls_):
     opts = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "options")
+    assert opts.params["title"].value == "Not titled yet"
     qtbot.mouseDClick(
         qapp_cls_.MainWindow.currentView.viewport(),
         QtCore.Qt.LeftButton,
@@ -273,8 +284,12 @@ def test_change_id(qtbot, qapp_cls_):
     type_text(qtbot, qapp_cls_, "changed")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
-    val = opts.params["title"].value
-    assert val == "Not titled changed"
+    assert opts.params["title"].value == "Not titled changed"
+    qtbot.wait(100)
+    undo(qtbot, qapp_cls_)
+    assert opts.params["title"].value == "Not titled yet"
+    redo(qtbot, qapp_cls_)
+    assert opts.params["title"].value == "Not titled changed"
 
 
 def test_rotate_block(qtbot, qapp_cls_):
@@ -295,7 +310,15 @@ def test_rotate_block(qtbot, qapp_cls_):
     new_rotation = opts.states["rotation"]
     assert new_rotation == old_rotation - 90
 
+    undo(qtbot, qapp_cls_)
+    new_rotation = opts.states["rotation"]
+    assert new_rotation == old_rotation
+
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Right)
+    new_rotation = opts.states["rotation"]
+    assert new_rotation == old_rotation + 90
+
+    undo(qtbot, qapp_cls_)
     new_rotation = opts.states["rotation"]
     assert new_rotation == old_rotation
 
@@ -344,7 +367,13 @@ def test_move_blocks(qtbot, qapp_cls_):
     while drag_t.is_alive():
         qtbot.wait(50)
     pag.mouseUp()
+    qtbot.wait(100)
     assert scaling * global_pos(throttle.gui, view) != start_throttle
+    undo(qtbot, qapp_cls_)
+    assert scaling * global_pos(throttle.gui, view) == start_throttle
+    redo(qtbot, qapp_cls_)
+    assert scaling * global_pos(throttle.gui, view) != start_throttle
+
     # Variable shouldn't move
     assert scaling * global_pos(variable.gui, view) == start_variable
     delete_block(qtbot, qapp_cls_, throttle)
@@ -537,6 +566,10 @@ def test_bypass(qtbot, qapp_cls_):
     # Bypass the throttle block
     click_on(qtbot, qapp_cls_, throttle)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_B)
+    assert throttle.state == "bypassed"
+    undo(qtbot, qapp_cls_)
+    assert throttle.state == "enabled"
+    redo(qtbot, qapp_cls_)
     assert throttle.state == "bypassed"
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_E)

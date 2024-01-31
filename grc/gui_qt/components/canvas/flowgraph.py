@@ -357,7 +357,7 @@ class FlowgraphScene(QtWidgets.QGraphicsScene, base.Component):
             z_values.append(block.gui.zValue())
         return max(z_values)
 
-    def remove_element(self, element):
+    def remove_element(self, element: GUIBlock):
         self.removeItem(element)
         self.core.remove_element(element.core)
 

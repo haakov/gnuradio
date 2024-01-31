@@ -2,8 +2,11 @@ from qtpy.QtWidgets import QUndoCommand
 
 import logging
 from copy import copy
+from qtpy.QtCore import QPointF
 
 from .canvas.flowgraph import FlowgraphScene
+from .canvas.block import Block
+from ...core.base import Element
 
 log = logging.getLogger(__name__)
 
@@ -35,8 +38,8 @@ class ChangeStateAction(QUndoCommand):
 
     def undo(self):
         for i in range(len(self.g_blocks)):
-            self.blocks[i].setStates(self.oldStates[i])
-            self.blocks[i].params = (self.oldParams[i])
+            self.g_blocks[i].setStates(self.oldStates[i])
+            self.g_blocks[i].params = (self.oldParams[i])
         self.scene.update()
 
 
@@ -53,12 +56,12 @@ class RotateAction(ChangeStateAction):
 
 
 class MoveAction(QUndoCommand):
-    def __init__(self, flowgraph, diff):
+    def __init__(self, scene: FlowgraphScene, diff: QPointF):
         QUndoCommand.__init__(self)
         log.debug("init MoveAction")
         self.setText('Move')
-        self.blocks = flowgraph.selected_blocks()
-        self.flowgraph = flowgraph
+        self.g_blocks = scene.selected_blocks()
+        self.scene = scene
         self.x = diff.x()
         self.y = diff.y()
         self.first = True
@@ -70,14 +73,14 @@ class MoveAction(QUndoCommand):
         if self.first:
             self.first = False
             return
-        for block in self.blocks:
-            block.moveBy(self.x, self.y)
-        self.flowgraph.update()
+        for g_block in self.g_blocks:
+            g_block.moveBy(self.x, self.y)
+        self.scene.update()
 
     def undo(self):
-        for block in self.blocks:
-            block.moveBy(-self.x, -self.y)
-        self.flowgraph.update()
+        for g_block in self.g_blocks:
+            g_block.moveBy(-self.x, -self.y)
+        self.scene.update()
 
 
 class EnableAction(ChangeStateAction):
@@ -110,14 +113,14 @@ class BypassAction(ChangeStateAction):
 # Change properties
 # This can only be performed on one block at a time
 class BlockPropsChangeAction(QUndoCommand):
-    def __init__(self, flowgraph, block):
+    def __init__(self, scene: FlowgraphScene, c_block: Block):
         QUndoCommand.__init__(self)
         log.debug("init BlockPropsChangeAction")
-        self.setText(f'{block.name} block: Change properties')
-        self.flowgraph = flowgraph
-        self.block = block
-        self.old_data = copy(block.old_data)
-        self.newData = copy(block.export_data())
+        self.setText(f'{c_block.name} block: Change properties')
+        self.scene = scene
+        self.c_block = c_block
+        self.old_data = copy(c_block.old_data)
+        self.new_data = copy(c_block.export_data())
         self.first = True
 
     def redo(self):
@@ -125,15 +128,15 @@ class BlockPropsChangeAction(QUndoCommand):
             self.first = False
             return
         try:
-            name = self.newData['name']
+            name = self.new_data['name']
         except KeyError:
-            name = self.newData['parameters']['id']
+            name = self.new_data['parameters']['id']
 
-        self.block.import_data(name, self.newData['states'], self.newData['parameters'])
-        self.block.rewrite()
-        self.block.validate()
-        self.block.create_shapes_and_labels()
-        self.flowgraph.update()
+        self.c_block.import_data(name, self.new_data['states'], self.new_data['parameters'])
+        self.c_block.rewrite()
+        self.c_block.validate()
+        self.c_block.gui.create_shapes_and_labels()
+        self.scene.update()
 
     def undo(self):
         try:
@@ -141,11 +144,11 @@ class BlockPropsChangeAction(QUndoCommand):
         except KeyError:
             name = self.old_data['parameters']['id']
 
-        self.block.import_data(name, self.old_data['states'], self.old_data['parameters'])
-        self.block.rewrite()
-        self.block.validate()
-        self.block.create_shapes_and_labels()
-        self.flowgraph.update()
+        self.c_block.import_data(name, self.old_data['states'], self.old_data['parameters'])
+        self.c_block.rewrite()
+        self.c_block.validate()
+        self.c_block.gui.create_shapes_and_labels()
+        self.scene.update()
 
 
 class BussifyAction(QUndoCommand):
@@ -158,8 +161,8 @@ class BussifyAction(QUndoCommand):
         self.g_blocks = scene.selected_blocks()
 
     def bussify(self):
-        for block in self.g_blocks:
-            block.core.bussify(self.direction)
+        for g_block in self.g_blocks:
+            g_block.core.bussify(self.direction)
         self.scene.update()
 
     def redo(self):
@@ -171,7 +174,7 @@ class BussifyAction(QUndoCommand):
 
 # Blocks and connections
 class NewElementAction(QUndoCommand):
-    def __init__(self, scene, element):
+    def __init__(self, scene: FlowgraphScene, element: Element):
         QUndoCommand.__init__(self)
         log.debug("init NewElementAction")
         self.setText('New')
@@ -198,7 +201,7 @@ class NewElementAction(QUndoCommand):
 
 
 class DeleteElementAction(QUndoCommand):
-    def __init__(self, scene):
+    def __init__(self, scene: FlowgraphScene):
         QUndoCommand.__init__(self)
         log.debug("init DeleteElementAction")
         self.setText('Delete')
@@ -217,8 +220,10 @@ class DeleteElementAction(QUndoCommand):
         self.scene.update()
 
     def undo(self):
-        for block in self.blocks:
-            self.scene.core.blocks.append(block)
-        for con in self.connections:
-            self.scene.core.connections(con)
+        for block in self.g_blocks:
+            self.scene.core.blocks.append(block.core)
+            self.scene.addItem(block)
+        for con in self.g_connections:
+            self.scene.core.connections.add(con.core)
+            self.scene.addItem(con)
         self.scene.update()
