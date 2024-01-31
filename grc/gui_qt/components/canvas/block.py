@@ -82,6 +82,7 @@ class GUIBlock(QGraphicsItem):
         self.moving = False
         self.old_data = None
         self.props_dialog = None
+        self.right_click_menu = None
 
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
@@ -352,12 +353,11 @@ class GUIBlock(QGraphicsItem):
 
     def contextMenuEvent(self, e):
         if not self.isSelected():
-            self.parent.clearSelection()
+            self.scene().clearSelection()
             self.setSelected(True)
 
-        view = self.parent.view
-        contextMenu = view._app().MainWindow.menus["edit"]
-        contextMenu.exec_(e.screenPos())
+        self.right_click_menu = self.scene()._app().MainWindow.menus["edit"]
+        self.right_click_menu.exec_(e.screenPos())
 
     def mouseDoubleClickEvent(self, e):
         self.open_properties()

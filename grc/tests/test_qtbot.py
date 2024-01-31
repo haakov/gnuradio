@@ -199,6 +199,23 @@ def test_add_throttle(qtbot, qapp_cls_):
 
     delete_block(qtbot, qapp_cls_, throttle)
 
+def test_right_click(qtbot, qapp_cls_):
+    qtbot.wait(100)
+    add_block_from_query(qtbot, qapp_cls_, "throttle")
+
+    throttle = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "blocks_throttle")
+    assert throttle is not None
+    qtbot.wait(100)
+
+    def close():
+        qtbot.keyClick(throttle.gui.right_click_menu, QtCore.Qt.Key_Escape)
+
+    QtCore.QTimer.singleShot(200, close)
+    click_on(qtbot, qapp_cls_, throttle, button="right")
+    qtbot.wait(100)
+
+    delete_block(qtbot, qapp_cls_, throttle)
+
 def test_errors(qtbot, qapp_cls_):
     menu = qapp_cls_.MainWindow.menus["build"]
 
