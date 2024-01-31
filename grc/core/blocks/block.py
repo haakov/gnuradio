@@ -19,7 +19,7 @@ from ._templates import MakoTemplates
 from ._flags import Flags
 
 from ..base import Element
-from ..params import Param
+from ..utils import attributed_str
 from ..utils.descriptors import lazy_property
 
 
@@ -67,10 +67,8 @@ class Block(Element):
         if self.key == 'options':
             self.params['id'].hide = 'part'
 
-        self.sinks = [port_factory(parent=self, **params)
-                      for params in self.inputs_data]
-        self.sources = [port_factory(parent=self, **params)
-                        for params in self.outputs_data]
+        self.sinks = [port_factory(parent=self, **params) for params in self.inputs_data]
+        self.sources = [port_factory(parent=self, **params) for params in self.outputs_data]
 
         self.active_sources = []  # on rewrite
         self.active_sinks = []  # on rewrite
@@ -599,6 +597,13 @@ class Block(Element):
 
     def children(self):
         return itertools.chain(self.params.values(), self.ports())
+
+    def connections(self):
+        block_connections = []
+        for port in self.ports():
+            block_connections = block_connections + list(port.connections())
+        return block_connections
+
 
     ##############################################
     # Access

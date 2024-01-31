@@ -35,18 +35,18 @@ class Cache(object):
     def load(self):
         try:
             self.need_cache_write = False
-            logger.debug(f"Loading block cache from: {self.cache_file}")
+            logger.debug(f"Loading cache from: {self.cache_file}")
             with open(self.cache_file, encoding='utf-8') as cache_file:
                 cache = json.load(cache_file)
             cacheversion = cache.get("version", None)
             logger.debug(f"Cache version {cacheversion}")
             self._cachetime = cache.get("cached-at", 0)
             if cacheversion == self.version:
-                logger.debug("Loaded block cache")
+                logger.debug("Loaded cache")
                 self.cache = cache["cache"]
             else:
                 logger.info(f"Outdated cache {self.cache_file} found, "
-                            "will be overwritten.")
+                        "will be overwritten.")
                 raise ValueError()
         except (IOError, ValueError):
             self.need_cache_write = True
