@@ -12,9 +12,9 @@ include(GrPython)
 
 gr_python_install(FILES __init__.py DESTINATION ${GR_PYTHON_DIR}/gnuradio/uhd)
 
-if(PYQT5_FOUND)
+if(PYQT_FOUND)
     gr_python_install(FILES replaymsgpushbutton.py DESTINATION ${GR_PYTHON_DIR}/gnuradio/uhd)
-endif(PYQT5_FOUND)
+endif(PYQT_FOUND)
 
 ########################################################################
 # Handle the unit tests
