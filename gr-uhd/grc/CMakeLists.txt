@@ -86,7 +86,7 @@ if(ENABLE_UHD_RFNOC)
         uhd_fpga_io_time_keeper.domain.yml
         uhd_fpga_io_xport.domain.yml
         DESTINATION ${GRC_BLOCKS_DIR})
-    if(PYQT5_FOUND)
+    if(PYQT_FOUND)
         install (FILES uhd_msgpushbutton.block.yml DESTINATION ${GRC_BLOCKS_DIR})
-    endif(PYQT5_FOUND)
+    endif(PYQT_FOUND)
 endif(ENABLE_UHD_RFNOC)
