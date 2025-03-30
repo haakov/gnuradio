@@ -36,7 +36,8 @@ BLOCK_DESCRIPTION_FILE_FORMAT_VERSION = 1
 #  0: undefined / legacy
 #  1: non-numeric message port keys (label is used instead)
 #  2: connection info is stored as dictionary
-FLOW_GRAPH_FILE_FORMAT_VERSION = 2
+#  3: pluggable workflows
+FLOW_GRAPH_FILE_FORMAT_VERSION = 3
 
 # Param tabs
 DEFAULT_PARAM_TAB = "General"

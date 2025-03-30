@@ -20,6 +20,7 @@ from .base import Element
 from .blocks import Block
 from .params import Param
 from .utils import expr_utils
+from .Constants import FLOW_GRAPH_FILE_FORMAT_VERSION
 
 log = logging.getLogger(__name__)
 
@@ -415,12 +416,6 @@ class FlowGraph(Element):
         def block_order(b):
             return not b.is_variable, b.name  # todo: vars still first ?!?
 
-        def get_file_format_version(data) -> int:
-            """Determine file format version based on available data"""
-            if any(isinstance(c, dict) for c in data['connections']):
-                return 2
-            return 1
-
         def sort_connection_key(connection_info) -> List[str]:
             if isinstance(connection_info, dict):
                 return [connection_info.get(key) for key in ('src_blk_id', 'src_port_id', 'snk_blk_id', 'snk_port_id')]
@@ -434,7 +429,7 @@ class FlowGraph(Element):
             key=sort_connection_key)
 
         data['metadata'] = {
-            'file_format': get_file_format_version(data),
+            'file_format': FLOW_GRAPH_FILE_FORMAT_VERSION,
             'grc_version': self.parent_platform.config.version
         }
         return data
