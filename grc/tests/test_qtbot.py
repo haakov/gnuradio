@@ -294,14 +294,14 @@ def test_change_id(qtbot, qapp_cls_):
     type_text(qtbot, qapp_cls_, "changed")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
-    assert opts.params["title"].value == "Not changed yet"
+    assert opts.params["title"].value == "Not titled changed"
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
     qtbot.wait(100)
     undo(qtbot, qapp_cls_)
     assert opts.params["title"].value == "Not titled yet"
     redo(qtbot, qapp_cls_)
-    assert opts.params["title"].value == "Not changed yet"
+    assert opts.params["title"].value == "Not titled changed"
 
 
 def test_rotate_block(qtbot, qapp_cls_):
