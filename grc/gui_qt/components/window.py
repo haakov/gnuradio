@@ -25,6 +25,7 @@ import subprocess
 import cProfile
 import pstats
 import traceback
+import json
 
 from typing import Union
 
@@ -176,7 +177,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         self.clipboard = None
         self.undoView = None
 
-        files_open = list(self.app.qsettings.value('window/files_open', [])) + file_path
+        files_open = json.loads(self.app.qsettings.value('window/files_open', [])) + file_path
         grc_file_found = False
         if files_open:
             for file in files_open:
@@ -989,15 +990,26 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
                 try:
                     self.add_recent_file(filename)
                     log.info("Opening flowgraph ({0})".format(filename))
-                    new_flowgraph = FlowgraphView(self, self.platform)
+                    new_fg_view = FlowgraphView(self, self.platform)
                     initial_state = self.platform.parse_flow_graph(filename)
-                    self.currentFlowgraphScene.import_data(initial_state)
+                    new_fg_view.scene().import_data(initial_state)
                 except Exception as e:
                     log.error("Could not open flowgraph ({0})\n{1}\n".format(filename, "".join(traceback.format_exception(None, value=e, tb=e.__traceback__))))
                     return False
+
+                tab_count = self.tabWidget.count()
+                replace_current_tab = False
+                if tab_count > 0:
+                    if False:
+                        replace_current_tab = True
+
+                if replace_current_tab:
+                    pass
+                else:
+                    self.tabWidget.addTab(new_fg_view, os.path.basename(filename))
+                    self.tabWidget.setCurrentIndex(tab_count - 1)
+
                 self.currentFlowgraphScene.filename = filename
-                self.tabWidget.addTab(new_flowgraph, os.path.basename(filename))
-                self.tabWidget.setCurrentIndex(self.tabWidget.count() - 1)
                 self.connect_fg_signals(self.currentFlowgraphScene)
                 self.currentFlowgraphScene.saved = True
                 self.currentFlowgraphScene.save_allowed = save_allowed
@@ -1737,7 +1749,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         self.app.qsettings.setValue('appearance/display_variable_editor', not self.app.VariableEditor.isHidden())
 
         # Write the leftmost tab to file first
-        self.app.qsettings.setValue('window/files_open', reversed(files_open))
+        self.app.qsettings.setValue('window/files_open', json.dumps(list(reversed(files_open))))
         self.app.qsettings.setValue('window/windowState', self.saveState())
         self.app.qsettings.setValue('window/geometry', self.saveGeometry())
         self.app.qsettings.sync()
