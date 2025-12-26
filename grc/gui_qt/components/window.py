@@ -24,6 +24,7 @@ import sys
 import subprocess
 import cProfile
 import pstats
+import traceback
 
 from typing import Union
 
@@ -180,13 +181,8 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         if files_open:
             for file in files_open:
                 if os.path.isfile(file):
-                    try:
-                        self.open_triggered(file)
-                        grc_file_found = True
-                    except Exception as e:
-                        import traceback
-                        log.error(f"failed to load flowgraph file {file} with exception {e}")
-                        log.debug(f"file {file}: {traceback.format_exception(value=e, tb=e.__traceback__)}")
+                    grc_file_found = self.open_triggered(file)
+
         if not grc_file_found:
             self.new_triggered()
 
@@ -990,14 +986,18 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         if filename:
             open_fgs = self.get_open_flowgraphs()
             if filename not in open_fgs:
-                self.add_recent_file(filename)
-                log.info("Opening flowgraph ({0})".format(filename))
-                new_flowgraph = FlowgraphView(self, self.platform)
-                initial_state = self.platform.parse_flow_graph(filename)
+                try:
+                    self.add_recent_file(filename)
+                    log.info("Opening flowgraph ({0})".format(filename))
+                    new_flowgraph = FlowgraphView(self, self.platform)
+                    initial_state = self.platform.parse_flow_graph(filename)
+                    self.currentFlowgraphScene.import_data(initial_state)
+                except Exception as e:
+                    log.error("Could not open flowgraph ({0})\n{1}\n".format(filename, "".join(traceback.format_exception(None, value=e, tb=e.__traceback__))))
+                    return False
+                self.currentFlowgraphScene.filename = filename
                 self.tabWidget.addTab(new_flowgraph, os.path.basename(filename))
                 self.tabWidget.setCurrentIndex(self.tabWidget.count() - 1)
-                self.currentFlowgraphScene.import_data(initial_state)
-                self.currentFlowgraphScene.filename = filename
                 self.connect_fg_signals(self.currentFlowgraphScene)
                 self.currentFlowgraphScene.saved = True
                 self.currentFlowgraphScene.save_allowed = save_allowed
@@ -1011,6 +1011,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
                 self.updateActions()
             else:
                 self.tabWidget.setCurrentIndex(open_fgs.index(filename))
+        return True
 
     def open_example(self, example_path):
         log.debug("open example")
@@ -1029,8 +1030,8 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
                 self.platform.save_flow_graph(filename, self.currentFlowgraph)
                 self.currentFlowgraph.grc_file_path = filename
                 self.add_recent_file(filename)
-            except IOError:
-                log.error("Save failed")
+            except IOError as e:
+                log.error("Could not save flowgraph ({0})\n{1}\n".format(filename, "".join(traceback.format_exception(None, value=e, tb=e.__traceback__))))
                 return
 
             log.info(f"Saved {filename}")
@@ -1062,8 +1063,8 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
             self.currentFlowgraphScene.filename = filename
             try:
                 self.platform.save_flow_graph(filename, self.currentFlowgraph)
-            except IOError:
-                log.error("Save (as) failed")
+            except IOError as e:
+                log.error("Could not save (as) flowgraph ({0})\n{1}\n".format(filename, "".join(traceback.format_exception(None, value=e, tb=e.__traceback__))))
                 return
 
             log.info(f"Saved (as) {filename}")
@@ -1091,8 +1092,9 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         if filename:
             try:
                 self.platform.save_flow_graph(filename, self.currentFlowgraph)
-            except IOError:
-                log.error("Save (copy) failed")
+            except IOError as e:
+                log.error("Could not save (copy) flowgraph ({0})\n{1}\n".format(filename, "".join(traceback.format_exception(None, value=e, tb=e.__traceback__))))
+                return
 
             log.info(f"Saved (copy) {filename}")
         else:
@@ -1200,6 +1202,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
                 )
             except ValueError:
                 log.error("Failed to generate screenshot")
+
 
     def undo_triggered(self):
         log.debug("undo")
