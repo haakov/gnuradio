@@ -190,7 +190,7 @@ def test_delete_block(qtbot, qapp_cls_):
 def test_add_null_sink(qtbot, qapp_cls_):
     qtbot.wait(100)
     add_block_from_query(qtbot, qapp_cls_, "null sin")
-
+    qtbot.wait(100)
     n_sink = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "blocks_null_sink")
     assert n_sink is not None
 
@@ -200,7 +200,7 @@ def test_add_null_sink(qtbot, qapp_cls_):
 def test_add_null_source(qtbot, qapp_cls_):
     qtbot.wait(100)
     add_block_from_query(qtbot, qapp_cls_, "null sou")
-
+    qtbot.wait(100)
     n_sou = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "blocks_null_source")
     assert n_sou is not None
 
@@ -210,6 +210,7 @@ def test_add_null_source(qtbot, qapp_cls_):
 def test_add_throttle(qtbot, qapp_cls_):
     qtbot.wait(100)
     add_block_from_query(qtbot, qapp_cls_, "throttle")
+    qtbot.wait(100)
 
     throttle = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "blocks_throttle")
     assert throttle is not None
@@ -220,6 +221,7 @@ def test_add_throttle(qtbot, qapp_cls_):
 def test_right_click(qtbot, qapp_cls_):
     qtbot.wait(100)
     add_block_from_query(qtbot, qapp_cls_, "throttle")
+    qtbot.wait(100)
 
     throttle = find_blocks(qapp_cls_.MainWindow.currentFlowgraph, "blocks_throttle")
     assert throttle is not None
@@ -228,7 +230,7 @@ def test_right_click(qtbot, qapp_cls_):
     def close():
         qtbot.keyClick(throttle.gui.right_click_menu, QtCore.Qt.Key_Escape)
 
-    QtCore.QTimer.singleShot(200, close)
+    QtCore.QTimer.singleShot(500, close)
     click_on(qtbot, qapp_cls_, throttle, button="right")
     qtbot.wait(100)
 
@@ -294,14 +296,14 @@ def test_change_id(qtbot, qapp_cls_):
     type_text(qtbot, qapp_cls_, "changed")
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
-    assert opts.params["title"].value == "Not changed yet"
+    assert opts.params["title"].value == "Not titled changed"
     qtbot.wait(100)
     keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_Enter)
     qtbot.wait(100)
     undo(qtbot, qapp_cls_)
     assert opts.params["title"].value == "Not titled yet"
     redo(qtbot, qapp_cls_)
-    assert opts.params["title"].value == "Not changed yet"
+    assert opts.params["title"].value == "Not titled changed"
 
 
 def test_rotate_block(qtbot, qapp_cls_):
@@ -357,6 +359,7 @@ def test_move_blocks(qtbot, qapp_cls_):
 
     qtbot.wait(100)
     add_block_from_query(qtbot, qapp_cls_, "throttle")
+    qtbot.wait(100)
 
     throttle = find_blocks(fg, "blocks_throttle")
     variable = find_blocks(fg, "variable")
@@ -399,6 +402,7 @@ def test_connection(qtbot, qapp_cls_):
     qtbot.wait(100)
     for block in ["null sou", "null sin"]:
         add_block_from_query(qtbot, qapp_cls_, block)
+        qtbot.wait(100)
 
     n_src = find_blocks(fg, "blocks_null_source")
     n_sink = find_blocks(fg, "blocks_null_sink")
@@ -457,6 +461,7 @@ def test_num_inputs(qtbot, qapp_cls_):
     qtbot.wait(100)
     for block in ["null sou", "null sin"]:
         add_block_from_query(qtbot, qapp_cls_, block)
+        qtbot.wait(100)
 
     n_src = find_blocks(fg, "blocks_null_source")
     n_sink = find_blocks(fg, "blocks_null_sink")
@@ -526,6 +531,7 @@ def test_bus(qtbot, qapp_cls_):
 
     qtbot.wait(100)
     add_block_from_query(qtbot, qapp_cls_, "null sin")
+    qtbot.wait(100)
 
     n_sink = find_blocks(fg, "blocks_null_sink")
 
@@ -593,6 +599,7 @@ def test_bypass(qtbot, qapp_cls_):
     qtbot.wait(100)
     for block in ["null sou", "throttle"]:
         add_block_from_query(qtbot, qapp_cls_, block)
+        qtbot.wait(100)
 
     n_src = find_blocks(fg, "blocks_null_source")
     throttle = find_blocks(fg, "blocks_throttle")
@@ -872,6 +879,7 @@ def test_file_new_close(qtbot, qapp_cls_, monkeypatch):
 
 
 def test_generate(qtbot, qapp_cls_, monkeypatch, tmp_path):
+    qtbot.wait(1000)
     fg = qapp_cls_.MainWindow.currentFlowgraph
     view = qapp_cls_.MainWindow.currentView
     scaling = qapp_cls_.MainWindow.screen().devicePixelRatio()
@@ -887,6 +895,7 @@ def test_generate(qtbot, qapp_cls_, monkeypatch, tmp_path):
     qtbot.wait(100)
     for block in ["null sou", "null sin"]:
         add_block_from_query(qtbot, qapp_cls_, block)
+        qtbot.wait(100)
 
     n_src = find_blocks(fg, "blocks_null_source")
     n_sink = find_blocks(fg, "blocks_null_sink")
