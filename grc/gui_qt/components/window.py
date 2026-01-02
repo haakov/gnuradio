@@ -1126,7 +1126,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         Closes a tab.
 
         Parameters:
-            tab_index: specifies which tab to close. If none, close the open tab
+            tab_index: specifies which tab to close. If False, close the open tab
 
         Returns:
             the file path OR True if a tab was closed (False otherwise)
@@ -1134,7 +1134,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         log.debug(f"Closing a tab (index {tab_index})")
 
         file_path = self.currentFlowgraphScene.filename
-        if tab_index == False:
+        if type(tab_index) is bool:
             tab_index = self.tabWidget.currentIndex()
 
         if self.currentFlowgraphScene.saved:
