@@ -1748,7 +1748,7 @@ class MainWindow(QtWidgets.QMainWindow, base.Component):
         self.app.qsettings.setValue('appearance/display_variable_editor', not self.app.VariableEditor.isHidden())
 
         # Write the leftmost tab to file first
-        self.app.qsettings.setValue('window/files_open', reversed(files_open))
+        self.app.qsettings.setValue('window/files_open', list(reversed(files_open)))
         self.app.qsettings.setValue('window/windowState', self.saveState())
         self.app.qsettings.setValue('window/geometry', self.saveGeometry())
         self.app.qsettings.sync()
