@@ -719,7 +719,7 @@ def test_file_preferences(qtbot, qapp_cls_):
 
     qtbot.keyClick(qapp_cls_.focusWidget(), QtCore.Qt.Key_F, QtCore.Qt.AltModifier)
     qtbot.wait(100)
-    QtCore.QTimer.singleShot(200, assert_and_close)
+    QtCore.QTimer.singleShot(500, assert_and_close)
     qtbot.keyClick(menu, QtCore.Qt.Key_F)
     qtbot.wait(600)
     assert qapp_cls_.activeWindow() == qapp_cls_.MainWindow
@@ -876,6 +876,8 @@ def test_file_new_close(qtbot, qapp_cls_, monkeypatch):
     for i in range(1, 4):
         ctrl_keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_W)
         assert win.tabWidget.count() == 4 - i, "File/Close"
+
+    ctrl_keystroke(qtbot, qapp_cls_, QtCore.Qt.Key_W)  # Close final tab
 
 
 def test_generate(qtbot, qapp_cls_, monkeypatch, tmp_path):
