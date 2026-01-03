@@ -539,7 +539,7 @@ def test_bus(qtbot, qapp_cls_):
 
     click_pos = scaling * global_pos(n_sink.gui, view)
     pag.doubleClick(click_pos.x(), click_pos.y(), button="left")
-    qtbot.wait(100)
+    qtbot.wait(500)  # Allow some extra time for the properties dialog to open
     param_index = 0
     for i in range(len(n_sink.gui.props_dialog.edit_params)):
         if n_sink.gui.props_dialog.edit_params[i].param.key == 'num_inputs':
