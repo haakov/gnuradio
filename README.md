@@ -45,11 +45,8 @@ energy particle physics, astrophysics, radio astronomy and more!
 ## How to Run the QT Version of GNU Radio Companion
 
 ```bash
-    # Ensure PyQt5 and other dependencies are installed
-    pip install QDarkStyle qtpy
-    
-    # If you want to run tests
-    pip install pytest-qt pyautogui
+    # If you want dark mode and GUI tests
+    pip install pytest-qt pyautogui QDarkStyle
 
     # Build and install as usual (described below) and then run
     gnuradio-companion --qt
@@ -57,7 +54,7 @@ energy particle physics, astrophysics, radio astronomy and more!
 
 ## GNU Radio 4.0
 
-The next major release of GNU Radio, GNU Radio 4.0, is currently under active development. The effort is being spearheaded by FAIR (The Facility for Anti-Proton and Ion Research), part of GSI in Germany. Development of that version is currently taking place under their GitHub organization, [here](https://github.com/fair-acc/gnuradio4).
+The next major release of GNU Radio, GNU Radio 4.0, is currently under active development in [the official GNU Radio 4 repo](https://github.com/gnuradio/gnuradio4).
 
 ## How to Install GNU Radio
 
